@@ -1,15 +1,10 @@
-// import './App.css';
-
-import SignUp from './components/SignUp';
-
-import Auth from './components/Auth';
+import Root from './components/Root';
 
 function App() {
     return (
         <div className="App">
             Test react app2
-            {/* <SignUp /> */}
-            <Auth />
+            <Root />
         </div>
     );
 }

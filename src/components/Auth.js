@@ -46,10 +46,8 @@ const Auth = () => {
 
     return (
         <>
-            <div>currently logged in as: {currentUser?.email}</div>
             <h1 className="text-center my-3 title">Login Page</h1>
             <div id="firebaseui-auth-container"></div>
-            <button onClick={logout}>Logout</button>
         </>
     );
 };
