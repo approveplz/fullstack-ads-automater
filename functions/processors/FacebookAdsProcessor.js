@@ -99,12 +99,12 @@ export default class FacebookAdsProcessor {
 
     async createCampaign({
         name,
+        special_ad_categories = [],
         // objective = 'OUTCOME_SALES', // double check w/ mak that this is the right one, but i think it is. it wont work with the adset optimization goal
         objective = 'OUTCOME_TRAFFIC',
-        status = 'PAUSED',
-        special_ad_categories = [],
         bid_strategy = 'LOWEST_COST_WITH_BID_CAP',
         daily_budget = 2000,
+        status = 'PAUSED',
     }) {
         console.log(`Creating Facebook Ad campaign. Name: ${name}`);
         const campaign = await this.adAccount.createCampaign([], {
@@ -313,5 +313,21 @@ export default class FacebookAdsProcessor {
 
         console.log(`Created ${adPromises.length} ads`);
         return ads;
+    }
+
+    // for testing
+
+    async cleanup() {
+        const videos = await this.adAccount.getAdVideos(['id'], {});
+        const deleteVideoPromises = videos.map((video) =>
+            this.adAccount.deleteAdVideos({
+                video_id: video.id,
+            })
+        );
+
+        // const campaign = await this.adAccount.getCampaigns(['id'], {})[0];
+        // await this.adAccount.deleteCampaigns(campaign.id);
+
+        await Promise.all(deleteVideoPromises);
     }
 }

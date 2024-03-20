@@ -1,4 +1,4 @@
-import Root from './components/Root';
+import Root from './components/Root.js';
 
 function App() {
     return (

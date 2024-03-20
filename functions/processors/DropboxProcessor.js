@@ -67,6 +67,10 @@ export default class DropboxProcessor {
     }
 
     async downloadFiles(files, outputLocation) {
+        if (!Object.keys(files).length) {
+            console.log('No Files to download');
+            return;
+        }
         console.log(`Downloading files from Dropbox folder`);
         try {
             // TODO: files is an object...it should probably be an array

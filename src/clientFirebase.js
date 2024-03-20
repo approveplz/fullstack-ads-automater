@@ -5,7 +5,9 @@ import {
     onAuthStateChanged,
     signOut,
 } from 'firebase/auth';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
+import { USER_PARAMETERS_COLLECTION_NAME } from './constants.js';
 
 // Safe to use clientside
 const firebaseConfig = {
@@ -19,9 +21,45 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-export const firebaseApp = initializeApp(firebaseConfig);
+const firebaseApp = initializeApp(firebaseConfig);
 
+// Initialize Cloud Firestore and get a reference to the service
+const db = getFirestore(firebaseApp);
 export const auth = getAuth();
+
+export async function getUserParameters() {
+    const user = auth.currentUser;
+    if (!user) {
+        return;
+    }
+
+    const docRef = doc(db, USER_PARAMETERS_COLLECTION_NAME, user.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        console.log('Document data:', data);
+        return data;
+    } else {
+        // docSnap.data() will be undefined in this case
+        return console.log('No such document!');
+    }
+}
+
+export async function saveUserParameters(parameters) {
+    const user = auth.currentUser;
+    if (!user) {
+        return;
+    }
+
+    await setDoc(
+        doc(db, USER_PARAMETERS_COLLECTION_NAME, user.uid),
+        parameters
+    );
+
+    console.log(`saved`);
+    return;
+}
 
 export function signUp(email, password) {
     return createUserWithEmailAndPassword(auth, email, password);

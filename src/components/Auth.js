@@ -2,12 +2,10 @@ import firebase from 'firebase/compat/app';
 
 import * as firebaseui from 'firebaseui';
 import 'firebaseui/dist/firebaseui.css';
-import { signUp, useAuth, logout, auth } from '../firebase.js';
+import { auth } from '../clientFirebase.js';
 import { useEffect } from 'react';
 
 const Auth = () => {
-    const currentUser = useAuth();
-
     useEffect(() => {
         const ui =
             firebaseui.auth.AuthUI.getInstance() ||
