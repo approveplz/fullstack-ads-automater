@@ -7,7 +7,8 @@ import {
 } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { USER_PARAMETERS_COLLECTION_NAME } from './constants.js';
+
+const USER_PARAMETERS_COLLECTION_NAME = 'userParameters';
 
 // Safe to use clientside
 const firebaseConfig = {

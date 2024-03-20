@@ -70,17 +70,17 @@ const Home = () => {
         const startTime = Date.now();
 
         const idToken = await currentUser.getIdToken();
-        const baseUrl = 'http://127.0.0.1:5001';
+        // const testUrl =
+        //     'http://127.0.0.1:5001/facebook-ads-automater/us-central1/process';
+        const prodUrl = 'https://process-ccsi5asyva-uc.a.run.app';
+
         setLoading(true);
 
-        const response = await axios.get(
-            `${baseUrl}/facebook-ads-automater/us-central1/process`,
-            {
-                headers: {
-                    Authorization: `Bearer ${idToken}`,
-                },
-            }
-        );
+        const response = await axios.get(prodUrl, {
+            headers: {
+                Authorization: `Bearer ${idToken}`,
+            },
+        });
 
         console.log('Response data:', response.data);
         setLoading(false);
@@ -92,10 +92,11 @@ const Home = () => {
 
     const handleTestDelete = async () => {
         setLoading(true);
+        // const testUrl =
+        //     'http://127.0.0.1:5001/facebook-ads-automater/us-central1/deleteVideos';
+        const prodUrl = 'https://deletevideos-ccsi5asyva-uc.a.run.app';
 
-        const response = await axios.get(
-            'http://127.0.0.1:5001/facebook-ads-automater/us-central1/deleteVideos'
-        );
+        const response = await axios.get(prodUrl);
 
         setLoading(false);
     };
@@ -253,7 +254,9 @@ const Home = () => {
                         onChange={handleChange}
                     />
                 </div>
-                <button type="submit">Submit</button>
+                <button disabled={loading} type="submit">
+                    Submit
+                </button>
             </form>
             <button disabled={loading} onClick={logout}>
                 Logout

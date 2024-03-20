@@ -1,7 +1,7 @@
 import admin from 'firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
 
-import { USER_PARAMETERS_COLLECTION_NAME } from '../src/constants.js';
+const USER_PARAMETERS_COLLECTION_NAME = 'userParameters';
 
 export async function verifyIdTokenAndGetUid(idToken) {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
