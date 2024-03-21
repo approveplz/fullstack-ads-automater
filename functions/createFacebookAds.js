@@ -4,7 +4,7 @@ import path from 'path';
 import { logger } from 'firebase-functions';
 import { promises as fs } from 'fs';
 import { onRequest } from 'firebase-functions/v2/https';
-import admin from 'firebase-admin';
+// import admin from 'firebase-admin';
 
 import {
     extractIdTokenFromHttpRequest,
@@ -24,9 +24,12 @@ const tempLocalFolder = '/tmp'; // Google Cloud Functions temporary storage
 export const createFacebookAdsFunction = onRequest(
     {
         timeoutSeconds: 540, //max is 540 seconds
-        // memory: '1GiB',
+        cors: true,
+        memory: '1GiB',
     },
     async (req, res) => {
+        logger.log('from cloud function', { req });
+
         // Initialize processors with configuration from environment variables
 
         const idToken = extractIdTokenFromHttpRequest(req);
@@ -166,25 +169,28 @@ export const createFacebookAdsFunction = onRequest(
     }
 );
 
-export const deleteFacebookVideos = onRequest(async (req, res) => {
-    debugger;
+export const deleteFacebookVideos = onRequest(
+    {
+        cors: true,
+    },
+    async (req, res) => {
+        const facebookAdsProcessor = new FacebookAdsProcessor(
+            {
+                appId: process.env.FACEBOOK_APP_ID,
+                appSecret: process.env.FACEBOOK_APP_SECRET,
+                accessToken: process.env.FACEBOOK_ACCESS_TOKEN,
+                accountId: process.env.FACEBOOK_ACCOUNT_ID,
+                pageId: process.env.FACEBOOK_PAGE_ID,
+                apiVersion: '19.0',
+            },
+            false
+        );
 
-    const facebookAdsProcessor = new FacebookAdsProcessor(
-        {
-            appId: process.env.FACEBOOK_APP_ID,
-            appSecret: process.env.FACEBOOK_APP_SECRET,
-            accessToken: process.env.FACEBOOK_ACCESS_TOKEN,
-            accountId: process.env.FACEBOOK_ACCOUNT_ID,
-            pageId: process.env.FACEBOOK_PAGE_ID,
-            apiVersion: '19.0',
-        },
-        false
-    );
-
-    try {
-        await facebookAdsProcessor.cleanup();
-        return res.status(200).send();
-    } catch (e) {
-        return res.status(500).send();
+        try {
+            await facebookAdsProcessor.cleanup();
+            return res.status(200).send();
+        } catch (e) {
+            return res.status(500).send();
+        }
     }
-});
+);

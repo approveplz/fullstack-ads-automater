@@ -68,26 +68,29 @@ const Home = () => {
 
     const handleProcess = async () => {
         const startTime = Date.now();
-
-        const idToken = await currentUser.getIdToken();
-        // const testUrl =
-        //     'http://127.0.0.1:5001/facebook-ads-automater/us-central1/process';
-        const prodUrl = 'https://process-ccsi5asyva-uc.a.run.app';
-
         setLoading(true);
 
-        const response = await axios.get(prodUrl, {
-            headers: {
-                Authorization: `Bearer ${idToken}`,
-            },
-        });
+        try {
+            const idToken = await currentUser.getIdToken();
+            // const testUrl =
+            //     'http://127.0.0.1:5001/facebook-ads-automater/us-central1/process';
+            const prodUrl = 'https://process-ccsi5asyva-uc.a.run.app';
 
-        console.log('Response data:', response.data);
-        setLoading(false);
+            const response = await axios.get(prodUrl, {
+                headers: {
+                    Authorization: `Bearer ${idToken}`,
+                },
+            });
 
-        const endTime = Date.now();
-        const elapsedTime = endTime - startTime; // Elapsed time in milliseconds
-        console.log(`Elapsed time: ${elapsedTime / 1000} sec`);
+            console.log('Response data:', response.data);
+        } catch (error) {
+            console.error('Error during the process:', error);
+        } finally {
+            setLoading(false); // Ensure setLoading is set to false whether there is an error or not
+            const endTime = Date.now();
+            const elapsedTime = endTime - startTime; // Elapsed time in milliseconds
+            console.log(`Elapsed time: ${elapsedTime / 1000} sec`);
+        }
     };
 
     const handleTestDelete = async () => {

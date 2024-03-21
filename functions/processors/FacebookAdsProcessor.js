@@ -3,6 +3,7 @@ import moment from 'moment';
 import fs from 'fs';
 import FormData from 'form-data';
 import { FacebookAdsApi, AdAccount } from 'facebook-nodejs-business-sdk';
+import { logger } from 'firebase-functions/v1';
 
 export default class FacebookAdsProcessor {
     constructor(
@@ -318,7 +319,9 @@ export default class FacebookAdsProcessor {
     // for testing
 
     async cleanup() {
+        logger.log('cleanup called');
         const videos = await this.adAccount.getAdVideos(['id'], {});
+        logger.log({ videos });
         const deleteVideoPromises = videos.map((video) =>
             this.adAccount.deleteAdVideos({
                 video_id: video.id,
