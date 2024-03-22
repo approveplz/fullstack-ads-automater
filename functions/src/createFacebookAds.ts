@@ -1,7 +1,8 @@
 // Import necessary modules and initialize environment configurations
 import dotenv from 'dotenv';
 import path from 'path';
-import { logger } from 'firebase-functions';
+import { logger, https, Response } from 'firebase-functions';
+// import type { HttpsFunction } from 'firebase-functions'
 import { promises as fs } from 'fs';
 import { onRequest } from 'firebase-functions/v2/https';
 // import admin from 'firebase-admin';
@@ -10,6 +11,7 @@ import {
     extractIdTokenFromHttpRequest,
     getUserParametersCloud,
     verifyIdTokenAndGetUid,
+    getEnvVariable,
 } from './cloudHelpers.js';
 
 import DropboxProcessor from './processors/DropboxProcessor.js';
@@ -27,61 +29,58 @@ export const createFacebookAdsFunction = onRequest(
         cors: true,
         memory: '1GiB',
     },
-    async (req, res) => {
+    async (req: https.Request, res: Response) => {
         logger.log('from cloud function', { req });
 
-        // Initialize processors with configuration from environment variables
-
-        const idToken = extractIdTokenFromHttpRequest(req);
-
-        const uid = await verifyIdTokenAndGetUid(idToken);
-
-        const userParameters = await getUserParametersCloud(uid);
-        console.log({ userParameters });
-
-        const {
-            campaignObjective,
-            bidStrategy,
-            adCreativeName,
-            adName,
-            adSetName,
-            dropboxProcessedFolder,
-            bodies,
-            billingEvent,
-            bidAmount,
-            optimizationGoal,
-            titles,
-            descriptions,
-            dropboxInputFolder,
-            dailyBudget,
-            websiteUrl,
-            campaignName,
-        } = userParameters;
-
-        const dropboxProcessor = new DropboxProcessor({
-            accessToken: process.env.DROPBOX_ACCESS_TOKEN,
-        });
-
-        const facebookAdsProcessor = new FacebookAdsProcessor(
-            {
-                appId: process.env.FACEBOOK_APP_ID,
-                appSecret: process.env.FACEBOOK_APP_SECRET,
-                accessToken: process.env.FACEBOOK_ACCESS_TOKEN,
-                accountId: process.env.FACEBOOK_ACCOUNT_ID,
-                pageId: process.env.FACEBOOK_PAGE_ID,
-                apiVersion: '19.0',
-            },
-            false
-        );
-
         try {
+            const idToken = extractIdTokenFromHttpRequest(req);
+            const uid = await verifyIdTokenAndGetUid(idToken);
+
+            const userParameters = await getUserParametersCloud(uid);
+            console.log({ userParameters });
+
+            const {
+                campaignObjective,
+                bidStrategy,
+                adCreativeName,
+                adName,
+                adSetName,
+                dropboxProcessedFolder,
+                bodies,
+                billingEvent,
+                bidAmount,
+                optimizationGoal,
+                titles,
+                descriptions,
+                dropboxInputFolder,
+                dailyBudget,
+                websiteUrl,
+                campaignName,
+            } = userParameters;
+
+            const dropboxProcessor = new DropboxProcessor({
+                accessToken: process.env.DROPBOX_ACCESS_TOKEN as string,
+            });
+
+            const facebookAdsProcessor = new FacebookAdsProcessor(
+                {
+                    appId: process.env.FACEBOOK_APP_ID || '',
+                    appSecret: process.env.FACEBOOK_APP_SECRET || '',
+                    accessToken: process.env.FACEBOOK_ACCESS_TOKEN || '',
+                    accountId: process.env.FACEBOOK_ACCOUNT_ID || '',
+                    pageId: process.env.FACEBOOK_PAGE_ID || '',
+                    apiVersion: '19.0',
+                },
+                false
+            );
+
             const files = await dropboxProcessor.getFilesFromFolder(
                 dropboxInputFolder,
                 5
             );
 
             if (!Object.keys(files).length) {
-                return res.status(204).send('No files found');
+                res.status(204).send('No files found');
             }
 
             const fileOutputPaths = await dropboxProcessor.downloadFiles(
@@ -103,7 +102,7 @@ export const createFacebookAdsFunction = onRequest(
                     const intervalMs = 10 * 1000;
                     const timeoutMs = 3 * 60 * 1000;
                     await facebookAdsProcessor.waitUntilVideoReady(
-                        video.id,
+                        video,
                         intervalMs,
                         timeoutMs
                     );
@@ -155,16 +154,12 @@ export const createFacebookAdsFunction = onRequest(
                 adSetsWithCreatives,
             });
 
-            return res
-                .status(200)
-                .send(
-                    `Ads processing completed successfully. ${JSON.stringify(
-                        ads
-                    )}`
-                );
+            res.status(200).send(
+                `Ads processing completed successfully. ${JSON.stringify(ads)}`
+            );
         } catch (e) {
-            console.error(e.message);
-            return res.status(500).send('Error processing ads.');
+            console.error((e as Error).message);
+            res.status(500).send('Error processing ads.');
         }
     }
 );
@@ -176,21 +171,21 @@ export const deleteFacebookVideos = onRequest(
     async (req, res) => {
         const facebookAdsProcessor = new FacebookAdsProcessor(
             {
-                appId: process.env.FACEBOOK_APP_ID,
-                appSecret: process.env.FACEBOOK_APP_SECRET,
-                accessToken: process.env.FACEBOOK_ACCESS_TOKEN,
-                accountId: process.env.FACEBOOK_ACCOUNT_ID,
-                pageId: process.env.FACEBOOK_PAGE_ID,
+                appId: getEnvVariable(process.env.FACEBOOK_APP_ID),
+                appSecret: getEnvVariable(process.env.FACEBOOK_APP_SECRET),
+                accessToken: getEnvVariable(process.env.FACEBOOK_ACCESS_TOKEN),
+                accountId: getEnvVariable(process.env.FACEBOOK_ACCOUNT_ID),
+                pageId: getEnvVariable(process.env.FACEBOOK_PAGE_ID),
                 apiVersion: '19.0',
             },
-            false
+            true
         );
 
         try {
             await facebookAdsProcessor.cleanup();
-            return res.status(200).send();
+            res.status(200).send();
         } catch (e) {
-            return res.status(500).send();
+            res.status(500).send();
         }
     }
 );

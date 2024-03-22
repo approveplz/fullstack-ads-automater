@@ -2,21 +2,120 @@ import axios from 'axios';
 import moment from 'moment';
 import fs from 'fs';
 import FormData from 'form-data';
-import { FacebookAdsApi, AdAccount } from 'facebook-nodejs-business-sdk';
+import {
+    FacebookAdsApi,
+    AdAccount,
+    AdCreative,
+    AdSet,
+    Ad,
+} from 'facebook-nodejs-business-sdk';
 import { logger } from 'firebase-functions/v1';
 
+interface FbApiCreateCampaignParams {
+    name: string;
+    objective: string;
+    bid_strategy: string;
+    daily_budget: number;
+    special_ad_categories?: string[];
+    status?: 'PAUSED';
+    promoted_object?: {
+        pixel_id: string;
+        custom_event_type: string;
+        application_id: string;
+    };
+}
+
+interface FbApiCreateAdSetParams {
+    name: string;
+    campaign_id: string;
+    bid_amount: number;
+    billing_event: string;
+    start_time?: string;
+    bid_strategy?: string;
+    end_time?: string;
+    optimization_goal?: string;
+    status?: 'PAUSED';
+    targeting?: {
+        geo_locations: {
+            countries: string[];
+        };
+        targeting_automation?: {
+            advantage_audience: number;
+        };
+    };
+    is_dynamic_creative?: boolean;
+}
+
+interface FbApiCreateAdCreativeParams {
+    name: string;
+    videos: FbApiVideo[];
+    bodies: string[];
+    titles: string[];
+    descriptions: string[];
+    website_url: string;
+}
+
+interface FbApiCreateAdParams {
+    name: string;
+    adset_id: string;
+    creative_id: string;
+    status?: 'PAUSED';
+}
+
+// Objects
+interface FbApiAdCreativeObjStorySpec {
+    page_id: string;
+}
+
+interface FbApiAdCreativeAssetSpec {
+    videos: { video_id: string }[];
+    bodies: { text: string }[];
+    titles: { text: string }[];
+    descriptions: { text: string }[];
+    ad_formats: string[];
+    call_to_action_types: string[];
+    link_urls: { website_url: string }[];
+    images?: string[];
+}
+
+interface FbApiVideo {
+    id: string;
+}
+
 export default class FacebookAdsProcessor {
+    // @ts-ignore
+    private appId: string;
+    // @ts-ignore
+    private appSecret: string;
+    private accessToken: string;
+    private showDebuggingInfo: boolean;
+    private accountId: string;
+    private pageId: string;
+    private apiVersion: string;
+    private adAccount: AdAccount;
+
     constructor(
-        {
+        options: {
+            appId: string;
+            appSecret: string;
+            accessToken: string;
+            accountId: string;
+            pageId: string;
+            apiVersion?: string;
+        },
+        showDebuggingInfo = false
+    ) {
+        this.validateRequiredOptions(options);
+
+        const {
             appId,
             appSecret,
             accessToken,
             accountId,
             pageId,
             apiVersion = '19.0',
-        },
-        showDebuggingInfo = false
-    ) {
+        } = options;
+
         this.appId = appId;
         this.appSecret = appSecret;
         this.accessToken = accessToken;
@@ -25,20 +124,38 @@ export default class FacebookAdsProcessor {
         this.pageId = pageId;
         this.apiVersion = apiVersion;
 
-        this.api = FacebookAdsApi.init(accessToken);
+        FacebookAdsApi.init(accessToken);
+
         this.adAccount = new AdAccount(`act_${this.accountId}`);
 
         console.log('Initialized FacebookAdsProcessor');
     }
 
-    logApiCallResult(apiCallName, data) {
+    private validateRequiredOptions(options: { [key: string]: any }): void {
+        const { appId, appSecret, accessToken, accountId, pageId } = options;
+        if (!appId) throw new Error('appId is required but was not provided');
+        if (!appSecret)
+            throw new Error('appSecret is required but was not provided');
+        if (!accessToken)
+            throw new Error('accessToken is required but was not provided');
+        if (!accountId)
+            throw new Error('accountId is required but was not provided');
+        if (!pageId) throw new Error('pageId is required but was not provided');
+    }
+
+    logApiCallResult(apiCallName: string, data: any) {
         console.log(apiCallName);
         if (this.showDebuggingInfo) {
             console.log('Data:' + JSON.stringify(data, null, 2));
         }
     }
 
-    async uploadAdVideo({ name, videoFilePath }) {
+    async uploadAdVideo(params: {
+        name: string;
+        videoFilePath: string;
+    }): Promise<FbApiVideo> {
+        const { name, videoFilePath } = params;
+
         console.log(`Uploading video to Facebook. Path: ${videoFilePath}}`);
         const url = `https://graph.facebook.com/v${this.apiVersion}/${this.adAccount.id}/advideos`;
 
@@ -59,12 +176,12 @@ export default class FacebookAdsProcessor {
         return data;
     }
 
-    async getVideoUploadStatus(videoId) {
+    async getVideoUploadStatus(video: FbApiVideo) {
         const params = new URLSearchParams({
             access_token: this.accessToken,
             fields: 'status',
         });
-        const url = `https://graph.facebook.com/v${this.apiVersion}/${videoId}?${params}`;
+        const url = `https://graph.facebook.com/v${this.apiVersion}/${video.id}?${params}`;
 
         let requestOptions = {
             method: 'get',
@@ -76,16 +193,20 @@ export default class FacebookAdsProcessor {
         return data;
     }
 
-    async waitUntilVideoReady(videoId, intervalMs, timeoutMs) {
-        console.log(`Waiting for videoId: ${videoId} to finish processing`);
+    async waitUntilVideoReady(
+        video: FbApiVideo,
+        intervalMs: number,
+        timeoutMs: number
+    ) {
+        console.log(`Waiting for videoId: ${video.id} to finish processing`);
         const startTime = new Date().getTime();
         let status = '';
 
         while (true) {
-            status = await this.getVideoUploadStatus(videoId);
+            status = await this.getVideoUploadStatus(video);
             if (status != 'processing') {
                 break;
-            } else if (startTime + timeoutMs <= new Date().getTime) {
+            } else if (startTime + timeoutMs <= new Date().getTime()) {
                 throw Error(`Video encoding timeout. Timeout: ${timeoutMs}`);
             }
 
@@ -95,7 +216,7 @@ export default class FacebookAdsProcessor {
         if (status != 'ready') {
             throw Error(`Failed. Video status: ${status}`);
         }
-        console.log(`videoId: ${videoId} has finished processing`);
+        console.log(`videoId: ${video.id} has finished processing`);
     }
 
     async createCampaign({
@@ -106,8 +227,18 @@ export default class FacebookAdsProcessor {
         bid_strategy = 'LOWEST_COST_WITH_BID_CAP',
         daily_budget = 2000,
         status = 'PAUSED',
-    }) {
+    }: FbApiCreateCampaignParams) {
         console.log(`Creating Facebook Ad campaign. Name: ${name}`);
+
+        // const params: FbApiCampaignParameters = {
+        //     name,
+        //     special_ad_categories,
+        //     objective,
+        //     bid_strategy,
+        //     daily_budget,
+        //     status
+        // };
+
         const campaign = await this.adAccount.createCampaign([], {
             name,
             status,
@@ -155,12 +286,12 @@ export default class FacebookAdsProcessor {
         // },
         // daily_budget,
         is_dynamic_creative = true,
-    }) {
+    }: FbApiCreateAdSetParams): Promise<AdSet> {
         if (start_time === '0') {
             const now = moment();
             const oneHourLater = now.add(1, 'hours');
             const oneHourLaterUnixTimestamp = oneHourLater.unix();
-            start_time = oneHourLaterUnixTimestamp;
+            start_time = oneHourLaterUnixTimestamp.toString();
         }
 
         const adSet = await this.adAccount.createAdSet([], {
@@ -186,22 +317,35 @@ export default class FacebookAdsProcessor {
         return adSet;
     }
 
-    createAdCreativeObjectStorySpec() {
+    createAdCreativeObjectStorySpec({
+        page_id,
+    }: {
+        page_id: string;
+    }): FbApiAdCreativeObjStorySpec {
         const objectStorySpec = {
-            page_id: this.pageId,
+            page_id,
         };
 
         return objectStorySpec;
     }
 
-    createAdCreativeAssetFeedSpec({
-        images = [],
-        videos,
-        bodies,
-        titles,
-        descriptions,
-        website_url,
-    }) {
+    createAdCreativeAssetFeedSpec(params: {
+        videos: FbApiVideo[];
+        bodies: string[];
+        titles: string[];
+        descriptions: string[];
+        website_url: string;
+        images?: string[];
+    }): FbApiAdCreativeAssetSpec {
+        const {
+            images = [],
+            videos,
+            bodies,
+            titles,
+            descriptions,
+            website_url,
+        } = params;
+
         const assetFeedSpec = {
             images,
             videos: videos.map((video) => ({
@@ -225,7 +369,7 @@ export default class FacebookAdsProcessor {
         titles,
         descriptions,
         website_url,
-    }) {
+    }: FbApiCreateAdCreativeParams): Promise<AdCreative> {
         console.log(`Creating Ad Creative. Name: ${name}`);
         const assetFeedSpec = this.createAdCreativeAssetFeedSpec({
             videos,
@@ -259,7 +403,7 @@ export default class FacebookAdsProcessor {
         titles,
         descriptions,
         website_url,
-    }) {
+    }: FbApiCreateAdCreativeParams) {
         console.log(`Creating Ad creatives...\n`);
         const maxVideosInCreative = 5;
         const videoChunks = [];
@@ -286,11 +430,15 @@ export default class FacebookAdsProcessor {
         return adCreatives;
     }
 
-    async createAd({ name, adSetId, creativeId }) {
+    async createAd({
+        name,
+        adset_id,
+        creative_id,
+    }: FbApiCreateAdParams): Promise<Ad> {
         const ad = await this.adAccount.createAd([], {
             name,
-            adset_id: adSetId,
-            creative: { creative_id: creativeId },
+            adset_id,
+            creative: { creative_id },
             status: 'PAUSED',
         });
 
@@ -299,14 +447,19 @@ export default class FacebookAdsProcessor {
         return ad;
     }
 
-    async createAds({ name, adSetsWithCreatives }) {
+    async createAds(params: {
+        name: string;
+        adSetsWithCreatives: { adSet: AdSet; creative: AdCreative }[];
+    }): Promise<Ad[]> {
+        const { name, adSetsWithCreatives } = params;
+
         console.log(`Creating Facebook Ads`);
         const adPromises = adSetsWithCreatives.map(
             ({ creative, adSet }, index) =>
                 this.createAd({
                     name: `${name} - ${index + 1}`,
-                    adSetId: adSet.id,
-                    creativeId: creative.id,
+                    adset_id: adSet.id,
+                    creative_id: creative.id,
                 })
         );
 
