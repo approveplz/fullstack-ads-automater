@@ -72,11 +72,9 @@ const Home = () => {
 
         try {
             const idToken = await currentUser.getIdToken();
-            // const testUrl =
-            //     'http://127.0.0.1:5001/facebook-ads-automater/us-central1/process';
-            const prodUrl = 'https://process-ccsi5asyva-uc.a.run.app';
+            const processUrl = process.env.REACT_APP_PROCESS_URL;
 
-            const response = await axios.get(prodUrl, {
+            const response = await axios.get(processUrl, {
                 headers: {
                     Authorization: `Bearer ${idToken}`,
                 },
@@ -86,9 +84,9 @@ const Home = () => {
         } catch (error) {
             console.error('Error during the process:', error);
         } finally {
-            setLoading(false); // Ensure setLoading is set to false whether there is an error or not
+            setLoading(false);
             const endTime = Date.now();
-            const elapsedTime = endTime - startTime; // Elapsed time in milliseconds
+            const elapsedTime = endTime - startTime;
             console.log(`Elapsed time: ${elapsedTime / 1000} sec`);
         }
     };

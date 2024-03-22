@@ -8,8 +8,14 @@ export default class DropboxProcessor {
     private dbx: Dropbox;
 
     constructor(options: { accessToken: string }) {
+        const { accessToken } = options;
+
+        if (!accessToken) {
+            throw new Error('Dropbox Access Token is required');
+        }
+
         this.dbx = new Dropbox({
-            accessToken: options.accessToken,
+            accessToken: accessToken,
         });
         console.log('Initialized Dropbox Processor');
     }
@@ -28,10 +34,41 @@ export default class DropboxProcessor {
         return files;
     }
 
+    // async getFilesFromFolder(
+    //     path: string,
+    //     limit?: number
+    // ): Promise<Record<string, DropboxFiles.FileMetadataReference>> {
+    //     console.log(`Getting files from Dropbox folder: ${path}`);
+    //     const response = await this.dbx.filesListFolder({
+    //         path,
+    //         limit,
+    //     });
+
+    //     let result = response.result;
+    //     const files = this.processFolderEntries({}, result.entries);
+
+    //     // Dropbox files are paginated
+    //     // Use continue api with cursor to get the rest
+    //     while (result.has_more) {
+    //         const response = await this.dbx.filesListFolderContinue({
+    //             cursor: result.cursor,
+    //         });
+    //         result = response.result;
+    //         this.processFolderEntries(files, result.entries);
+    //     }
+
+    //     console.log(
+    //         `Retrieved ${
+    //             Object.keys(files).length
+    //         } files from folder: ${path}\n`
+    //     );
+    //     return files;
+    // }
+
     async getFilesFromFolder(
         path: string,
         limit?: number
-    ): Promise<Record<string, DropboxFiles.FileMetadataReference>> {
+    ): Promise<DropboxFiles.FileMetadataReference[]> {
         console.log(`Getting files from Dropbox folder: ${path}`);
         const response = await this.dbx.filesListFolder({
             path,
@@ -39,7 +76,7 @@ export default class DropboxProcessor {
         });
 
         let result = response.result;
-        const files = this.processFolderEntries({}, result.entries);
+        const filesObj = this.processFolderEntries({}, result.entries);
 
         // Dropbox files are paginated
         // Use continue api with cursor to get the rest
@@ -48,14 +85,12 @@ export default class DropboxProcessor {
                 cursor: result.cursor,
             });
             result = response.result;
-            this.processFolderEntries(files, result.entries);
+            this.processFolderEntries(filesObj, result.entries);
         }
 
-        console.log(
-            `Retrieved ${
-                Object.keys(files).length
-            } files from folder: ${path}\n`
-        );
+        const files = Object.values(filesObj);
+
+        console.log(`Retrieved ${files.length} files from folder: ${path}\n`);
         return files;
     }
 
@@ -76,27 +111,64 @@ export default class DropboxProcessor {
         return outputPath;
     }
 
+    // async downloadFiles(
+    //     files: Record<string, DropboxFiles.FileMetadataReference>,
+    //     outputLocation: string
+    // ) {
+    //     if (!Object.keys(files).length) {
+    //         console.log('No Files to download');
+    //         return [];
+    //     }
+    //     console.log(`Downloading files from Dropbox folder`);
+    //     try {
+    //         // TODO: files is an object...it should probably be an array
+    //         const downloadFilePromises = Object.entries(files).map(
+    //             async ([key, val]) => {
+    //                 if (!val.path_lower) {
+    //                     throw new Error(
+    //                         'path_lower does not exist on file to download'
+    //                     );
+    //                 }
+    //                 return this.downloadFile(val['path_lower'], outputLocation);
+    //             }
+    //         );
+
+    //         // Promises are run concurrently. If one fails, the other promises succeed but and error is still thrown
+    //         const downloadedFiles = await Promise.all(downloadFilePromises);
+
+    //         console.log(
+    //             `Downloaded ${downloadedFiles.length} files from Dropbox Folder\n`
+    //         );
+
+    //         return downloadedFiles;
+    //     } catch (e) {
+    //         console.log(
+    //             'There was an error downloading at least one file: ',
+    //             e
+    //         );
+    //         return [];
+    //     }
+    // }
+
     async downloadFiles(
-        files: Record<string, DropboxFiles.FileMetadataReference>,
+        files: DropboxFiles.FileMetadataReference[],
         outputLocation: string
     ) {
-        if (!Object.keys(files).length) {
+        if (!files.length) {
             console.log('No Files to download');
             return [];
         }
         console.log(`Downloading files from Dropbox folder`);
         try {
             // TODO: files is an object...it should probably be an array
-            const downloadFilePromises = Object.entries(files).map(
-                async ([key, val]) => {
-                    if (!val.path_lower) {
-                        throw new Error(
-                            'path_lower does not exist on file to download'
-                        );
-                    }
-                    return this.downloadFile(val['path_lower'], outputLocation);
+            const downloadFilePromises = files.map(async (file) => {
+                if (!file.path_lower) {
+                    throw new Error(
+                        'path_lower does not exist on file to download'
+                    );
                 }
-            );
+                return this.downloadFile(file['path_lower'], outputLocation);
+            });
 
             // Promises are run concurrently. If one fails, the other promises succeed but and error is still thrown
             const downloadedFiles = await Promise.all(downloadFilePromises);
@@ -116,13 +188,13 @@ export default class DropboxProcessor {
     }
 
     async moveFiles(
-        files: Record<string, DropboxFiles.FileMetadataReference>,
+        files: DropboxFiles.FileMetadataReference[],
         toPath: string
     ) {
         console.log('Moving Dropbox files out of input folder...');
-        const entries = Object.entries(files).map(([key, val]) => ({
-            from_path: val['path_lower'] as string,
-            to_path: `${toPath}/${val.name}`,
+        const entries = files.map((file) => ({
+            from_path: file['path_lower'] as string,
+            to_path: `${toPath}/${file.name}`,
         }));
 
         await this.dbx.filesMoveBatchV2({ entries });

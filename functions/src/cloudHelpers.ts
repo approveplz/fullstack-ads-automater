@@ -21,10 +21,38 @@ export const extractIdTokenFromHttpRequest = (req: https.Request) => {
     }
 };
 
-export async function getUserParametersCloud(uid: string) {
+export interface UserParameters {
+    campaignObjective: 'OUTCOME_TRAFFIC';
+    bidStrategy: 'LOWEST_COST_WITH_BID_CAP';
+    adCreativeName: string;
+    adName: string;
+    adSetName: string;
+    dropboxProcessedFolder: string;
+    bodies: string[];
+    billingEvent: 'IMPRESSIONS';
+    bidAmount: string;
+    optimizationGoal: 'LANDING_PAGE_VIEWS';
+    titles: string[];
+    descriptions: string[];
+    dropboxInputFolder: string;
+    dailyBudget: string;
+    websiteUrl: string;
+    campaignName: string;
+}
+
+const userConverter = {
+    toFirestore: (data: UserParameters) => data,
+    fromFirestore: (snap: FirebaseFirestore.QueryDocumentSnapshot) =>
+        snap.data() as UserParameters,
+};
+
+export async function getUserParametersCloud(
+    uid: string
+): Promise<UserParameters> {
     const db = await getFirestore();
     const docSnap = await db
         .collection(USER_PARAMETERS_COLLECTION_NAME)
+        .withConverter(userConverter)
         .doc(uid)
         .get();
 

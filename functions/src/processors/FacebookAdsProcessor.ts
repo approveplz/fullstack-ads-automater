@@ -15,7 +15,7 @@ interface FbApiCreateCampaignParams {
     name: string;
     objective: string;
     bid_strategy: string;
-    daily_budget: number;
+    daily_budget: string;
     special_ad_categories?: string[];
     status?: 'PAUSED';
     promoted_object?: {
@@ -28,7 +28,7 @@ interface FbApiCreateCampaignParams {
 interface FbApiCreateAdSetParams {
     name: string;
     campaign_id: string;
-    bid_amount: number;
+    bid_amount: string;
     billing_event: string;
     start_time?: string;
     bid_strategy?: string;
@@ -58,7 +58,9 @@ interface FbApiCreateAdCreativeParams {
 interface FbApiCreateAdParams {
     name: string;
     adset_id: string;
-    creative_id: string;
+    creative: {
+        creative_id: string;
+    };
     status?: 'PAUSED';
 }
 
@@ -156,7 +158,7 @@ export default class FacebookAdsProcessor {
     }): Promise<FbApiVideo> {
         const { name, videoFilePath } = params;
 
-        console.log(`Uploading video to Facebook. Path: ${videoFilePath}}`);
+        console.log(`Uploading video to Facebook. Path: ${videoFilePath}`);
         const url = `https://graph.facebook.com/v${this.apiVersion}/${this.adAccount.id}/advideos`;
 
         const formdata = new FormData();
@@ -225,7 +227,7 @@ export default class FacebookAdsProcessor {
         // objective = 'OUTCOME_SALES', // double check w/ mak that this is the right one, but i think it is. it wont work with the adset optimization goal
         objective = 'OUTCOME_TRAFFIC',
         bid_strategy = 'LOWEST_COST_WITH_BID_CAP',
-        daily_budget = 2000,
+        daily_budget = '2000',
         status = 'PAUSED',
     }: FbApiCreateCampaignParams) {
         console.log(`Creating Facebook Ad campaign. Name: ${name}`);
@@ -430,44 +432,48 @@ export default class FacebookAdsProcessor {
         return adCreatives;
     }
 
-    async createAd({
-        name,
-        adset_id,
-        creative_id,
-    }: FbApiCreateAdParams): Promise<Ad> {
-        const ad = await this.adAccount.createAd([], {
+    async createAd(params: {
+        name: string;
+        adSet: AdSet;
+        creative: AdCreative;
+    }): Promise<Ad> {
+        const { name, adSet, creative } = params;
+
+        const createAdParams: FbApiCreateAdParams = {
             name,
-            adset_id,
-            creative: { creative_id },
+            adset_id: adSet.id,
+            creative: { creative_id: creative.id },
             status: 'PAUSED',
-        });
+        };
+
+        const ad = await this.adAccount.createAd([], createAdParams);
 
         this.logApiCallResult(`Created Facebook Ad. Ad ID: ${ad.id}`, ad);
 
         return ad;
     }
 
-    async createAds(params: {
-        name: string;
-        adSetsWithCreatives: { adSet: AdSet; creative: AdCreative }[];
-    }): Promise<Ad[]> {
-        const { name, adSetsWithCreatives } = params;
+    // async createAds(params: {
+    //     name: string;
+    //     adSetsWithCreatives: { adSet: AdSet; creative: AdCreative }[];
+    // }): Promise<Ad[]> {
+    //     const { name, adSetsWithCreatives } = params;
 
-        console.log(`Creating Facebook Ads`);
-        const adPromises = adSetsWithCreatives.map(
-            ({ creative, adSet }, index) =>
-                this.createAd({
-                    name: `${name} - ${index + 1}`,
-                    adset_id: adSet.id,
-                    creative_id: creative.id,
-                })
-        );
+    //     console.log(`Creating Facebook Ads`);
+    //     const adPromises = adSetsWithCreatives.map(
+    //         ({ creative, adSet }, index) =>
+    //             this.createAd({
+    //                 name: `${name} - ${index + 1}`,
+    //                 adset_id: adSet.id,
+    //                 creative_id: creative.id,
+    //             })
+    //     );
 
-        const ads = await Promise.all(adPromises);
+    //     const ads = await Promise.all(adPromises);
 
-        console.log(`Created ${adPromises.length} ads`);
-        return ads;
-    }
+    //     console.log(`Created ${adPromises.length} ads`);
+    //     return ads;
+    // }
 
     // for testing
 
