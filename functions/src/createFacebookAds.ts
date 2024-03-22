@@ -11,7 +11,6 @@ import {
     extractIdTokenFromHttpRequest,
     getUserParametersCloud,
     verifyIdTokenAndGetUid,
-    getEnvVariable,
 } from './cloudHelpers.js';
 
 import DropboxProcessor from './processors/DropboxProcessor.js';
@@ -171,11 +170,11 @@ export const deleteFacebookVideos = onRequest(
     async (req, res) => {
         const facebookAdsProcessor = new FacebookAdsProcessor(
             {
-                appId: getEnvVariable(process.env.FACEBOOK_APP_ID),
-                appSecret: getEnvVariable(process.env.FACEBOOK_APP_SECRET),
-                accessToken: getEnvVariable(process.env.FACEBOOK_ACCESS_TOKEN),
-                accountId: getEnvVariable(process.env.FACEBOOK_ACCOUNT_ID),
-                pageId: getEnvVariable(process.env.FACEBOOK_PAGE_ID),
+                appId: process.env.FACEBOOK_APP_ID || '',
+                appSecret: process.env.FACEBOOK_APP_SECRET || '',
+                accessToken: process.env.FACEBOOK_ACCESS_TOKEN || '',
+                accountId: process.env.FACEBOOK_ACCOUNT_ID || '',
+                pageId: process.env.FACEBOOK_PAGE_ID || '',
                 apiVersion: '19.0',
             },
             true

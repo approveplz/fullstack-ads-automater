@@ -39,16 +39,3 @@ export async function getUserParametersCloud(uid: string) {
 
     return params;
 }
-
-export function getEnvVariable(name: string | undefined): string {
-    if (name === undefined || process.env[name] === undefined) {
-        throw new Error(`Environment variable ${name} is not set.`);
-    }
-
-    const value = process.env[name];
-    if (typeof value === 'string') {
-        return value;
-    } else {
-        throw new Error(`Environment variable ${name} is not of type String.`);
-    }
-}
