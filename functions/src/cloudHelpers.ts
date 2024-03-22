@@ -12,11 +12,8 @@ export async function verifyIdTokenAndGetUid(idToken: string) {
 }
 
 export const extractIdTokenFromHttpRequest = (req: https.Request) => {
-    logger.log('extract id token from header');
-    logger.log({ headers: req.headers });
-    logger.log({ getheaders: req.get('authorization') });
+    logger.log('Extracting ID Token from header');
     const authHeader = req.headers['authorization'];
-    logger.log({ authHeader });
     if (authHeader && authHeader.startsWith('Bearer ')) {
         return authHeader.split(' ')[1]; // Split the header and get the token part
     } else {
