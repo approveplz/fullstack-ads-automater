@@ -70,9 +70,15 @@ const Home = () => {
         const startTime = Date.now();
         setLoading(true);
 
+        console.log({ nodeEnv: process.env.NODE_ENV });
+
         try {
             const idToken = await currentUser.getIdToken();
-            const processUrl = process.env.REACT_APP_PROCESS_URL;
+
+            const processUrl =
+                process.env.NODE_ENV === 'production'
+                    ? 'https://process-ccsi5asyva-uc.a.run.app'
+                    : 'http://127.0.0.1:5001/facebook-ads-automater/us-central1/process';
 
             const response = await axios.get(processUrl, {
                 headers: {
@@ -107,7 +113,7 @@ const Home = () => {
 
     return (
         <div>
-            <h2>Enter your parameters</h2>
+            <h2>Enter your parameters: changed 2</h2>
             <form onSubmit={handleSubmit}>
                 <h3>Dropbox Parameters</h3>
                 <div>

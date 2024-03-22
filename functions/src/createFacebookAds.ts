@@ -1,11 +1,8 @@
-// Import necessary modules and initialize environment configurations
 import dotenv from 'dotenv';
 import path from 'path';
 import { https, Response } from 'firebase-functions';
-// import type { HttpsFunction } from 'firebase-functions'
 import { promises as fs } from 'fs';
 import { onRequest } from 'firebase-functions/v2/https';
-// import admin from 'firebase-admin';
 
 import {
     extractIdTokenFromHttpRequest,
@@ -100,32 +97,6 @@ const createFacebookAdsFunctionBatch = async (
         optimization_goal: optimizationGoal,
     });
 
-    // const adSetWithCreativePromise = adCreatives.map(
-    //     async (creative, index) => {
-    //         const adSet = await facebookAdsProcessor.createAdSet({
-    //             name: `${adSetName} - ${index + 1}`,
-    //             campaign_id: campaign.id,
-    //             bid_amount: bidAmount,
-    //             billing_event: billingEvent,
-    //             optimization_goal: optimizationGoal,
-    //         });
-    //         return { adSet, creative };
-    //     }
-    // );
-
-    // const adSetsWithCreativesPromises = adCreatives.map(
-    //     async (creative, index) => {
-    //         const adSet = await facebookAdsProcessor.createAdSet({
-    //             name: `${adSetName} - ${index + 1}`,
-    //             campaign_id: campaign.id,
-    //             bid_amount: bidAmount,
-    //             billing_event: billingEvent,
-    //             optimization_goal: optimizationGoal,
-    //         });
-    //         return { adSet, creative };
-    //     }
-    // );
-    // const adSetsWithCreatives = await Promise.all(adSetsWithCreativesPromises);
     const ad = await facebookAdsProcessor.createAd({
         name: adName,
         adSet,
@@ -149,7 +120,7 @@ export const createFacebookAdsFunction = onRequest(
             const uid = await verifyIdTokenAndGetUid(idToken);
 
             const userParameters = await getUserParametersCloud(uid);
-            console.log({ userParameters });
+            // console.log({ userParameters });
 
             const {
                 dropboxInputFolder,
@@ -198,6 +169,7 @@ export const createFacebookAdsFunction = onRequest(
             Every AdSet can only have one Dynamic AdCreative, which can have five videos
             */
             for (let i = 0; i < dropboxFiles.length; i += batchSize) {
+                let batchIndex = 0;
                 const currentBatchDropboxFiles = dropboxFiles.slice(
                     i,
                     i + batchSize
@@ -210,10 +182,12 @@ export const createFacebookAdsFunction = onRequest(
                         userParameters,
                         campaign,
                     },
-                    i
+                    batchIndex
                 );
 
                 ads.push(ad);
+                batchIndex += 1;
+                console.log(`Finished processing batch: ${batchIndex + 1}`);
             }
 
             res.status(200).send(
@@ -226,148 +200,7 @@ export const createFacebookAdsFunction = onRequest(
     }
 );
 
-// export const createFacebookAdsFunction = onRequest(
-//     {
-//         timeoutSeconds: 540, //max is 540 seconds
-//         cors: true,
-//         memory: '1GiB',
-//     },
-//     async (req: https.Request, res: Response) => {
-//         logger.log('from cloud function', { req });
-
-//         try {
-//             const idToken = extractIdTokenFromHttpRequest(req);
-//             const uid = await verifyIdTokenAndGetUid(idToken);
-
-//             const userParameters = await getUserParametersCloud(uid);
-//             console.log({ userParameters });
-
-//             const {
-//                 campaignObjective,
-//                 bidStrategy,
-//                 adCreativeName,
-//                 adName,
-//                 adSetName,
-//                 dropboxProcessedFolder,
-//                 bodies,
-//                 billingEvent,
-//                 bidAmount,
-//                 optimizationGoal,
-//                 titles,
-//                 descriptions,
-//                 dropboxInputFolder,
-//                 dailyBudget,
-//                 websiteUrl,
-//                 campaignName,
-//             } = userParameters;
-
-//             const dropboxProcessor = new DropboxProcessor({
-//                 accessToken: process.env.DROPBOX_ACCESS_TOKEN as string,
-//             });
-
-//             const facebookAdsProcessor = new FacebookAdsProcessor(
-//                 {
-//                     appId: process.env.FACEBOOK_APP_ID || '',
-//                     appSecret: process.env.FACEBOOK_APP_SECRET || '',
-//                     accessToken: process.env.FACEBOOK_ACCESS_TOKEN || '',
-//                     accountId: process.env.FACEBOOK_ACCOUNT_ID || '',
-//                     pageId: process.env.FACEBOOK_PAGE_ID || '',
-//                     apiVersion: '19.0',
-//                 },
-//                 false
-//             );
-
-//             const files = await dropboxProcessor.getFilesFromFolder(
-//                 dropboxInputFolder,
-//                 5
-//             );
-
-//             if (!Object.keys(files).length) {
-//                 res.status(204).send('No files found');
-//             }
-
-//             ///
-//             const fileOutputPaths = await dropboxProcessor.downloadFiles(
-//                 files,
-//                 tempLocalFolder
-//             );
-
-//             await dropboxProcessor.moveFiles(files, dropboxProcessedFolder);
-
-//             const uploadVideoPromises = fileOutputPaths.map(
-//                 async (outputPath) => {
-//                     const video = await facebookAdsProcessor.uploadAdVideo({
-//                         name: path.basename(
-//                             outputPath,
-//                             path.extname(outputPath)
-//                         ),
-//                         videoFilePath: outputPath,
-//                     });
-//                     const intervalMs = 10 * 1000;
-//                     const timeoutMs = 3 * 60 * 1000;
-//                     await facebookAdsProcessor.waitUntilVideoReady(
-//                         video,
-//                         intervalMs,
-//                         timeoutMs
-//                     );
-//                     return video;
-//                 }
-//             );
-//             const uploadedVideos = await Promise.all(uploadVideoPromises);
-
-//             const deleteLocalFilePromises = fileOutputPaths.map((outputPath) =>
-//                 fs.unlink(outputPath)
-//             );
-//             await Promise.all(deleteLocalFilePromises);
-//             console.log(
-//                 `Deleted ${deleteLocalFilePromises.length} files from local folder`
-//             );
-
-//             const campaign = await facebookAdsProcessor.createCampaign({
-//                 name: campaignName,
-//                 objective: campaignObjective,
-//                 bid_strategy: bidStrategy,
-//                 daily_budget: dailyBudget,
-//             });
-
-//             const adCreatives = await facebookAdsProcessor.createAdCreatives({
-//                 name: adCreativeName,
-//                 videos: uploadedVideos,
-//                 bodies,
-//                 titles,
-//                 descriptions,
-//                 website_url: websiteUrl,
-//             });
-//             const adSetsWithCreativesPromises = adCreatives.map(
-//                 async (creative, index) => {
-//                     const adSet = await facebookAdsProcessor.createAdSet({
-//                         name: `${adSetName} - ${index + 1}`,
-//                         campaign_id: campaign.id,
-//                         bid_amount: bidAmount,
-//                         billing_event: billingEvent,
-//                         optimization_goal: optimizationGoal,
-//                     });
-//                     return { adSet, creative };
-//                 }
-//             );
-//             const adSetsWithCreatives = await Promise.all(
-//                 adSetsWithCreativesPromises
-//             );
-//             const ads = await facebookAdsProcessor.createAds({
-//                 name: adName,
-//                 adSetsWithCreatives,
-//             });
-
-//             res.status(200).send(
-//                 `Ads processing completed successfully. ${JSON.stringify(ads)}`
-//             );
-//         } catch (e) {
-//             console.error((e as Error).message);
-//             res.status(500).send('Error processing ads.');
-//         }
-//     }
-// );
-
+// For testing
 export const deleteFacebookVideos = onRequest(
     {
         cors: true,

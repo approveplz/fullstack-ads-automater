@@ -232,15 +232,6 @@ export default class FacebookAdsProcessor {
     }: FbApiCreateCampaignParams) {
         console.log(`Creating Facebook Ad campaign. Name: ${name}`);
 
-        // const params: FbApiCampaignParameters = {
-        //     name,
-        //     special_ad_categories,
-        //     objective,
-        //     bid_strategy,
-        //     daily_budget,
-        //     status
-        // };
-
         const campaign = await this.adAccount.createCampaign([], {
             name,
             status,
@@ -398,40 +389,6 @@ export default class FacebookAdsProcessor {
         return adCreative;
     }
 
-    async createAdCreatives({
-        name,
-        videos,
-        bodies,
-        titles,
-        descriptions,
-        website_url,
-    }: FbApiCreateAdCreativeParams) {
-        console.log(`Creating Ad creatives...\n`);
-        const maxVideosInCreative = 5;
-        const videoChunks = [];
-
-        for (let i = 0; i < videos.length; i += maxVideosInCreative) {
-            const videoChunk = videos.slice(i, i + maxVideosInCreative);
-            videoChunks.push(videoChunk);
-        }
-
-        const adCreativePromises = videoChunks.map((videos, index) =>
-            this.createAdCreative({
-                name: `${name} - ${index + 1}`,
-                videos,
-                bodies,
-                titles,
-                descriptions,
-                website_url,
-            })
-        );
-
-        const adCreatives = await Promise.all(adCreativePromises);
-        console.log(`Created ${adCreativePromises.length} ad creatives`);
-
-        return adCreatives;
-    }
-
     async createAd(params: {
         name: string;
         adSet: AdSet;
@@ -453,30 +410,7 @@ export default class FacebookAdsProcessor {
         return ad;
     }
 
-    // async createAds(params: {
-    //     name: string;
-    //     adSetsWithCreatives: { adSet: AdSet; creative: AdCreative }[];
-    // }): Promise<Ad[]> {
-    //     const { name, adSetsWithCreatives } = params;
-
-    //     console.log(`Creating Facebook Ads`);
-    //     const adPromises = adSetsWithCreatives.map(
-    //         ({ creative, adSet }, index) =>
-    //             this.createAd({
-    //                 name: `${name} - ${index + 1}`,
-    //                 adset_id: adSet.id,
-    //                 creative_id: creative.id,
-    //             })
-    //     );
-
-    //     const ads = await Promise.all(adPromises);
-
-    //     console.log(`Created ${adPromises.length} ads`);
-    //     return ads;
-    // }
-
     // for testing
-
     async cleanup() {
         logger.log('cleanup called');
         const videos = await this.adAccount.getAdVideos(['id'], {});
