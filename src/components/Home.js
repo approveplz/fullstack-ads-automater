@@ -4,8 +4,45 @@ import {
     saveUserParameters,
     getUserParameters,
 } from '../clientFirebase.js';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
+import {
+    Button,
+    Box,
+    Card,
+    CardHeader,
+    CardBody,
+    CardFooter,
+    Grid,
+    Heading,
+    Paragraph,
+    ResponsiveContext,
+    Form,
+    FormField,
+    Select,
+    TextInput,
+    Text,
+    TextArea,
+} from 'grommet';
+import { Moon, Sun } from 'grommet-icons';
+
+const CardTemplate = ({ title, children, footer }) => {
+    // const size = useContext(ResponsiveContext);
+
+    return (
+        <Card>
+            <CardHeader pad="medium">
+                <Heading level={1} margin="none">
+                    {title}
+                </Heading>
+            </CardHeader>
+            <CardBody pad="medium">{children}</CardBody>
+            <CardFooter pad="medium" background="background-contrast">
+                {footer}
+            </CardFooter>
+        </Card>
+    );
+};
 
 // TODO ad validation
 // TODO fix UI
@@ -109,172 +146,223 @@ const Home = () => {
     };
 
     const currentUser = useAuth();
-    // console.log({ currentUser });
 
     return (
-        <div>
-            <h2>Enter your parameters: changed 2</h2>
-            <form onSubmit={handleSubmit}>
-                <h3>Dropbox Parameters</h3>
-                <div>
-                    <label>Dropbox Input Folder Name:</label>
-                    <input
-                        type="text"
+        <Box align="center" justify="start" pad="large" gap="medium">
+            <Text pad="large">{JSON.stringify(formData)}</Text>
+            <CardTemplate title="Enter your parameters">
+                <Form onSubmit={handleSubmit}>
+                    <Heading level={2}>Dropbox Parameters</Heading>
+                    <FormField
+                        label="Dropbox Input Folder Name"
                         name="dropboxInputFolder"
-                        value={formData.dropboxInputFolder}
-                        onChange={handleChange}
-                    />
-                </div>
-                <div>
-                    <label>Dropbox Processed Folder Name:</label>
-                    <input
-                        type="text"
+                    >
+                        <TextInput
+                            name="dropboxInputFolder"
+                            value={formData.dropboxInputFolder}
+                            onChange={handleChange}
+                        />
+                    </FormField>
+                    <FormField
+                        label="Dropbox Processed Folder Name"
                         name="dropboxProcessedFolder"
-                        value={formData.dropboxProcessedFolder}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                <h3>Campaign Parameters</h3>
-                <div>
-                    <label>Campaign Name:</label>
-                    <input
-                        type="text"
-                        name="campaignName"
-                        value={formData.campaignName}
-                        onChange={handleChange}
-                    />
-                </div>
-                <div>
-                    {/* this should be dropdown */}
-                    <label>Campaign Objective:</label>
-                    <input
-                        type="text"
-                        name="objective"
-                        value={formData.campaignObjective}
-                        onChange={handleChange}
-                    />
-                </div>
-                <div>
-                    {/* this should be dropdown */}
-                    <label>Bid Strategy:</label>
-                    <input
-                        type="text"
-                        name="bidStrategy"
-                        value={formData.bidStrategy}
-                        onChange={handleChange}
-                    />
-                </div>
-                <div>
-                    <label>Daily Budget:</label>
-                    <input
-                        type="number"
-                        name="dailyBudget"
-                        value={formData.dailyBudget}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                <h3>Ad Set Parameters</h3>
-                <div>
-                    <label>Ad Set Name:</label>
-                    <input
-                        type="text"
-                        name="adSetName"
-                        value={formData.adSetName}
-                        onChange={handleChange}
-                    />
-                </div>
-                <div>
-                    <label>Bid Amount:</label>
-                    <input
-                        type="number"
-                        name="bidAmount"
-                        value={formData.bidAmount}
-                        onChange={handleChange}
-                    />
-                </div>
-                <div>
-                    {/* this should be dropdown */}
-                    <label>Billing Event:</label>
-                    <input
-                        type="text"
-                        name="billingEvent"
-                        value={formData.billingEvent}
-                        onChange={handleChange}
-                    />
-                </div>
-                <div>
-                    {/* this should be dropdown */}
-                    <label>Optimization Goal:</label>
-                    <input
-                        type="text"
+                    >
+                        <TextInput
+                            name="dropboxProcessedFolder"
+                            value={formData.dropboxProcessedFolder}
+                            onChange={handleChange}
+                        />
+                    </FormField>
+                    <Heading level={2}>Campaign Parameters</Heading>
+                    <FormField label="Campaign Name" name="campaignName">
+                        <TextInput
+                            name="campaignName"
+                            value={formData.campaignName}
+                            onChange={handleChange}
+                        />
+                    </FormField>
+                    <FormField label="Campaign Objective" name="objective">
+                        <Select
+                            name="objective"
+                            options={[
+                                {
+                                    label: 'Outcome Traffic',
+                                    value: 'OUTCOME_TRAFFIC',
+                                },
+                            ]}
+                            value={formData.campaignObjective}
+                            labelKey="label"
+                            valueKey="value"
+                        />
+                    </FormField>
+                    <FormField label="Bid Strategy" name="bidStrategy">
+                        <Select
+                            name="bidStrategy"
+                            options={[
+                                {
+                                    label: 'Lowest Cost With Bid Cap',
+                                    value: 'LOWEST_COST_WITH_BID_CAP',
+                                },
+                            ]}
+                            value={formData.bidStrategy}
+                            labelKey="label"
+                            valueKey="value"
+                        />
+                    </FormField>
+                    <FormField label="Daily Budget:" name="dailyBudget">
+                        {/* Add validation to make sure its a number */}
+                        <TextInput
+                            name="dailyBudget"
+                            value={formData.dailyBudget}
+                            onChange={handleChange}
+                        />
+                    </FormField>
+                    <Heading level={2}>Ad Set Parameters</Heading>
+                    <FormField label="Ad Set Name:" name="adSetName">
+                        <TextInput
+                            name="adSetName"
+                            value={formData.adSetName}
+                            onChange={handleChange}
+                        />
+                    </FormField>
+                    <FormField label="Bid Amount" name="bidAmount">
+                        <TextInput
+                            type="number"
+                            name="bidAmount"
+                            value={formData.bidAmount}
+                            onChange={handleChange}
+                        />
+                    </FormField>
+                    <FormField label="Billing Event" name="billingEvent">
+                        <Select
+                            name="billingEvent"
+                            labelKey="label"
+                            valueKey="value"
+                            options={[
+                                {
+                                    label: 'Impressions',
+                                    value: 'IMPRESSIONS',
+                                },
+                            ]}
+                            value={formData.billingEvent}
+                            onChange={handleChange}
+                        />
+                    </FormField>
+                    <FormField
+                        label="Optimization Goal"
                         name="optimizationGoal"
-                        value={formData.optimizationGoal}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                {/* Ad creative params */}
-                <h3>Ad Creative Parameters</h3>
-                <div>
-                    <label>Ad Creative Name:</label>
-                    <input
-                        type="text"
-                        name="adCreativeName"
-                        value={formData.adCreativeName}
-                        onChange={handleChange}
-                    />
-                </div>
-                <div>
-                    <label>Bodies (comma-separated):</label>
-                    <input
-                        type="text"
-                        name="bodies"
-                        value={formData.bodies.join(',')}
-                        onChange={handleChange}
-                    />
-                </div>
-                <div>
-                    <label>Titles (comma-separated):</label>
-                    <input
-                        type="text"
-                        name="titles"
-                        value={formData.titles.join(',')}
-                        onChange={handleChange}
-                    />
-                </div>
-                <div>
-                    <label>Descriptions (comma-separated) :</label>
-                    <textarea
+                    >
+                        <Select
+                            name="optimizationGoal"
+                            labelKey="label"
+                            valueKey="value"
+                            options={[
+                                {
+                                    label: 'Landing Page Views',
+                                    value: 'LANDING_PAGE_VIEWS',
+                                },
+                            ]}
+                            value={formData.optimizationGoal}
+                            onChange={handleChange}
+                        />
+                    </FormField>
+                    <Heading level={2}>Ad Creative Parameters</Heading>
+                    <FormField label="Ad Creative Name" name="adCreativeName">
+                        <TextInput
+                            name="adCreativeName"
+                            value={formData.adCreativeName}
+                            onChange={handleChange}
+                        />
+                    </FormField>
+                    <FormField label="Bodies (comma-separated)" name="bodies">
+                        <TextInput
+                            name="bodies"
+                            value={formData.bodies.join(',')}
+                            onChange={(e) =>
+                                handleChange({
+                                    ...e,
+                                    target: {
+                                        ...e.target,
+                                        value: e.target.value.split(','),
+                                    },
+                                })
+                            }
+                        />
+                    </FormField>
+                    <FormField label="Titles (comma-separated)" name="titles">
+                        <TextInput
+                            name="titles"
+                            value={formData.titles.join(',')}
+                            onChange={(e) =>
+                                handleChange({
+                                    ...e,
+                                    target: {
+                                        ...e.target,
+                                        value: e.target.value.split(','),
+                                    },
+                                })
+                            }
+                        />
+                    </FormField>
+                    <FormField
+                        label="Descriptions (comma-separated)"
                         name="descriptions"
-                        value={formData.descriptions.join(',')}
-                        onChange={handleChange}
+                    >
+                        <TextArea
+                            name="descriptions"
+                            value={formData.descriptions.join(',')}
+                            onChange={(e) =>
+                                handleChange({
+                                    ...e,
+                                    target: {
+                                        ...e.target,
+                                        value: e.target.value.split(','),
+                                    },
+                                })
+                            }
+                        />
+                    </FormField>
+                    <FormField label="Website URL" name="websiteUrl">
+                        <TextInput
+                            type="url"
+                            name="websiteUrl"
+                            value={formData.websiteUrl}
+                            onChange={handleChange}
+                        />
+                    </FormField>
+                    <Button
+                        disabled={loading}
+                        busy={loading}
+                        label="Save Parameters"
+                        primary
                     />
-                </div>
-                <div>
-                    <label>Website URL:</label>
-                    <input
-                        type="url"
-                        name="websiteUrl"
-                        value={formData.websiteUrl}
-                        onChange={handleChange}
-                    />
-                </div>
-                <button disabled={loading} type="submit">
-                    Submit
-                </button>
-            </form>
-            <button disabled={loading} onClick={logout}>
-                Logout
-            </button>
-            <button disabled={loading} onClick={handleProcess}>
-                Process
-            </button>
+                </Form>
+            </CardTemplate>
+
+            <Button
+                primary
+                label="Process"
+                icon={<Sun />}
+                disabled={loading}
+                busy={loading}
+                onClick={handleProcess}
+                tip={{
+                    content: (
+                        <Box pad="small" round="small" background="light-3">
+                            Create Facebook Ads
+                        </Box>
+                    ),
+                }}
+            />
             <button disabled={loading} onClick={handleTestDelete}>
                 clean up for testing
             </button>
-        </div>
+            <Grid columns="medium" gap="large" pad={{ bottom: 'large' }}>
+                <CardTemplate title="this is a card" />
+                <CardTemplate title="this is another card" />
+                <CardTemplate title="this is a third card" />
+            </Grid>
+        </Box>
     );
 };
 
