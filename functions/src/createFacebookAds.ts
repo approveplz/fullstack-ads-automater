@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { https, Response } from 'firebase-functions';
 import { promises as fs } from 'fs';
-import { onRequest } from 'firebase-functions/v2/https';
+// import { onRequest } from 'firebase-functions/v2/https';
 
 import {
     extractIdTokenFromHttpRequest,
@@ -108,104 +108,29 @@ const createFacebookAdsFunctionBatch = async (
     return ad;
 };
 
-export const createFacebookAdsFunction = onRequest(
-    {
-        timeoutSeconds: 540, //max is 540 seconds
-        cors: true,
-        memory: '1GiB',
-    },
-    async (req: https.Request, res: Response) => {
-        try {
-            const idToken = extractIdTokenFromHttpRequest(req);
-            const uid = await verifyIdTokenAndGetUid(idToken);
+export const createFacebookAdsFunction = async (
+    req: https.Request,
+    res: Response
+) => {
+    try {
+        const idToken = extractIdTokenFromHttpRequest(req);
+        const uid = await verifyIdTokenAndGetUid(idToken);
 
-            const userParameters = await getUserParametersCloud(uid);
-            // console.log({ userParameters });
+        const userParameters = await getUserParametersCloud(uid);
+        // console.log({ userParameters });
 
-            const {
-                dropboxInputFolder,
-                campaignName,
-                campaignObjective,
-                bidStrategy,
-                dailyBudget,
-            } = userParameters;
+        const {
+            dropboxInputFolder,
+            campaignName,
+            campaignObjective,
+            bidStrategy,
+            dailyBudget,
+        } = userParameters;
 
-            const dropboxProcessor = new DropboxProcessor({
-                accessToken: process.env.DROPBOX_ACCESS_TOKEN || '',
-            });
+        const dropboxProcessor = new DropboxProcessor({
+            accessToken: process.env.DROPBOX_ACCESS_TOKEN || '',
+        });
 
-            const facebookAdsProcessor = new FacebookAdsProcessor(
-                {
-                    appId: process.env.FACEBOOK_APP_ID || '',
-                    appSecret: process.env.FACEBOOK_APP_SECRET || '',
-                    accessToken: process.env.FACEBOOK_ACCESS_TOKEN || '',
-                    accountId: process.env.FACEBOOK_ACCOUNT_ID || '',
-                    pageId: process.env.FACEBOOK_PAGE_ID || '',
-                    apiVersion: '19.0',
-                },
-                false
-            );
-
-            const dropboxFiles = await dropboxProcessor.getFilesFromFolder(
-                dropboxInputFolder,
-                10 // this can be anything
-            );
-
-            if (!dropboxFiles.length) {
-                res.status(204).send('No files found');
-            }
-
-            const campaign = await facebookAdsProcessor.createCampaign({
-                name: campaignName,
-                objective: campaignObjective,
-                bid_strategy: bidStrategy,
-                daily_budget: dailyBudget,
-            });
-
-            const ads = [];
-
-            const batchSize = 5; // Max of 5 creatives when using Dynamic Creative Ad
-            /*
-            Every AdSet can only have one Dynamic AdCreative, which can have five videos
-            */
-            for (let i = 0; i < dropboxFiles.length; i += batchSize) {
-                let batchIndex = 0;
-                const currentBatchDropboxFiles = dropboxFiles.slice(
-                    i,
-                    i + batchSize
-                );
-                const ad = await createFacebookAdsFunctionBatch(
-                    dropboxProcessor,
-                    facebookAdsProcessor,
-                    {
-                        dropboxFiles: currentBatchDropboxFiles,
-                        userParameters,
-                        campaign,
-                    },
-                    batchIndex
-                );
-
-                ads.push(ad);
-                batchIndex += 1;
-                console.log(`Finished processing batch: ${batchIndex + 1}`);
-            }
-
-            res.status(200).send(
-                `Ads processing completed successfully. ${JSON.stringify(ads)}`
-            );
-        } catch (e) {
-            console.error((e as Error).message);
-            res.status(500).send('Error processing ads.');
-        }
-    }
-);
-
-// For testing
-export const deleteFacebookVideos = onRequest(
-    {
-        cors: true,
-    },
-    async (req, res) => {
         const facebookAdsProcessor = new FacebookAdsProcessor(
             {
                 appId: process.env.FACEBOOK_APP_ID || '',
@@ -215,14 +140,175 @@ export const deleteFacebookVideos = onRequest(
                 pageId: process.env.FACEBOOK_PAGE_ID || '',
                 apiVersion: '19.0',
             },
-            true
+            false
         );
 
-        try {
-            await facebookAdsProcessor.cleanup();
-            res.status(200).send();
-        } catch (e) {
-            res.status(500).send();
+        const dropboxFiles = await dropboxProcessor.getFilesFromFolder(
+            dropboxInputFolder,
+            10 // this can be anything
+        );
+
+        if (!dropboxFiles.length) {
+            res.status(204).send('No files found');
         }
+
+        const campaign = await facebookAdsProcessor.createCampaign({
+            name: campaignName,
+            objective: campaignObjective,
+            bid_strategy: bidStrategy,
+            daily_budget: dailyBudget,
+        });
+
+        const ads = [];
+
+        const batchSize = 5; // Max of 5 creatives when using Dynamic Creative Ad
+        /*
+            Every AdSet can only have one Dynamic AdCreative, which can have five videos
+            */
+        for (let i = 0; i < dropboxFiles.length; i += batchSize) {
+            let batchIndex = 0;
+            const currentBatchDropboxFiles = dropboxFiles.slice(
+                i,
+                i + batchSize
+            );
+            const ad = await createFacebookAdsFunctionBatch(
+                dropboxProcessor,
+                facebookAdsProcessor,
+                {
+                    dropboxFiles: currentBatchDropboxFiles,
+                    userParameters,
+                    campaign,
+                },
+                batchIndex
+            );
+
+            ads.push(ad);
+            console.log(`Finished processing batch: ${batchIndex + 1}`);
+            batchIndex += 1;
+        }
+
+        res.status(200).send(
+            `Ads processing completed successfully. ${JSON.stringify(ads)}`
+        );
+    } catch (e) {
+        console.error((e as Error).message);
+        res.status(500).send('Error processing ads.');
     }
-);
+};
+
+// export const createFacebookAdsFunction = onRequest(
+//     {
+//         timeoutSeconds: 540, //max is 540 seconds
+//         cors: true,
+//         memory: '1GiB',
+//     },
+//     async (req: https.Request, res: Response) => {
+//         try {
+//             const idToken = extractIdTokenFromHttpRequest(req);
+//             const uid = await verifyIdTokenAndGetUid(idToken);
+
+//             const userParameters = await getUserParametersCloud(uid);
+//             // console.log({ userParameters });
+
+//             const {
+//                 dropboxInputFolder,
+//                 campaignName,
+//                 campaignObjective,
+//                 bidStrategy,
+//                 dailyBudget,
+//             } = userParameters;
+
+//             const dropboxProcessor = new DropboxProcessor({
+//                 accessToken: process.env.DROPBOX_ACCESS_TOKEN || '',
+//             });
+
+//             const facebookAdsProcessor = new FacebookAdsProcessor(
+//                 {
+//                     appId: process.env.FACEBOOK_APP_ID || '',
+//                     appSecret: process.env.FACEBOOK_APP_SECRET || '',
+//                     accessToken: process.env.FACEBOOK_ACCESS_TOKEN || '',
+//                     accountId: process.env.FACEBOOK_ACCOUNT_ID || '',
+//                     pageId: process.env.FACEBOOK_PAGE_ID || '',
+//                     apiVersion: '19.0',
+//                 },
+//                 false
+//             );
+
+//             const dropboxFiles = await dropboxProcessor.getFilesFromFolder(
+//                 dropboxInputFolder,
+//                 10 // this can be anything
+//             );
+
+//             if (!dropboxFiles.length) {
+//                 res.status(204).send('No files found');
+//             }
+
+//             const campaign = await facebookAdsProcessor.createCampaign({
+//                 name: campaignName,
+//                 objective: campaignObjective,
+//                 bid_strategy: bidStrategy,
+//                 daily_budget: dailyBudget,
+//             });
+
+//             const ads = [];
+
+//             const batchSize = 5; // Max of 5 creatives when using Dynamic Creative Ad
+//             /*
+//             Every AdSet can only have one Dynamic AdCreative, which can have five videos
+//             */
+//             for (let i = 0; i < dropboxFiles.length; i += batchSize) {
+//                 let batchIndex = 0;
+//                 const currentBatchDropboxFiles = dropboxFiles.slice(
+//                     i,
+//                     i + batchSize
+//                 );
+//                 const ad = await createFacebookAdsFunctionBatch(
+//                     dropboxProcessor,
+//                     facebookAdsProcessor,
+//                     {
+//                         dropboxFiles: currentBatchDropboxFiles,
+//                         userParameters,
+//                         campaign,
+//                     },
+//                     batchIndex
+//                 );
+
+//                 ads.push(ad);
+//                 batchIndex += 1;
+//                 console.log(`Finished processing batch: ${batchIndex + 1}`);
+//             }
+
+//             res.status(200).send(
+//                 `Ads processing completed successfully. ${JSON.stringify(ads)}`
+//             );
+//         } catch (e) {
+//             console.error((e as Error).message);
+//             res.status(500).send('Error processing ads.');
+//         }
+//     }
+// );
+
+// For testing
+export const deleteFacebookVideos = async (
+    req: https.Request,
+    res: Response
+) => {
+    const facebookAdsProcessor = new FacebookAdsProcessor(
+        {
+            appId: process.env.FACEBOOK_APP_ID || '',
+            appSecret: process.env.FACEBOOK_APP_SECRET || '',
+            accessToken: process.env.FACEBOOK_ACCESS_TOKEN || '',
+            accountId: process.env.FACEBOOK_ACCOUNT_ID || '',
+            pageId: process.env.FACEBOOK_PAGE_ID || '',
+            apiVersion: '19.0',
+        },
+        true
+    );
+
+    try {
+        await facebookAdsProcessor.cleanup();
+        res.status(200).send();
+    } catch (e) {
+        res.status(500).send();
+    }
+};

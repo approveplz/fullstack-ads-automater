@@ -44,6 +44,11 @@ const CardTemplate = ({ title, children, footer }) => {
     );
 };
 
+const apiUrl =
+    process.env.NODE_ENV === 'production'
+        ? 'https://process-ccsi5asyva-uc.a.run.app/api'
+        : 'http://127.0.0.1:5001/facebook-ads-automater/us-central1/api';
+
 // TODO ad validation
 // TODO fix UI
 const Home = () => {
@@ -111,13 +116,9 @@ const Home = () => {
 
         try {
             const idToken = await currentUser.getIdToken();
+            const url = `${apiUrl}/process`;
 
-            const processUrl =
-                process.env.NODE_ENV === 'production'
-                    ? 'https://process-ccsi5asyva-uc.a.run.app'
-                    : 'http://127.0.0.1:5001/facebook-ads-automater/us-central1/process';
-
-            const response = await axios.get(processUrl, {
+            const response = await axios.get(url, {
                 headers: {
                     Authorization: `Bearer ${idToken}`,
                 },
@@ -136,11 +137,10 @@ const Home = () => {
 
     const handleTestDelete = async () => {
         setLoading(true);
-        // const testUrl =
-        //     'http://127.0.0.1:5001/facebook-ads-automater/us-central1/deleteVideos';
-        const prodUrl = 'https://deletevideos-ccsi5asyva-uc.a.run.app';
 
-        const response = await axios.get(prodUrl);
+        const url = `${apiUrl}/cleanup`;
+
+        const response = await axios.get(url);
 
         setLoading(false);
     };
