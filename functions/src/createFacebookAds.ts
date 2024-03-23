@@ -165,8 +165,8 @@ export const createFacebookAdsFunction = async (
         /*
             Every AdSet can only have one Dynamic AdCreative, which can have five videos
             */
+        let batchIndex = 0;
         for (let i = 0; i < dropboxFiles.length; i += batchSize) {
-            let batchIndex = 0;
             const currentBatchDropboxFiles = dropboxFiles.slice(
                 i,
                 i + batchSize

@@ -46,7 +46,7 @@ const CardTemplate = ({ title, children, footer }) => {
 
 const apiUrl =
     process.env.NODE_ENV === 'production'
-        ? 'https://process-ccsi5asyva-uc.a.run.app/api'
+        ? 'https://api-ccsi5asyva-uc.a.run.app'
         : 'http://127.0.0.1:5001/facebook-ads-automater/us-central1/api';
 
 // TODO ad validation
