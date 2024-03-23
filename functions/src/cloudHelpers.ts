@@ -1,6 +1,7 @@
 import admin from 'firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
-import { logger, https } from 'firebase-functions';
+import { logger } from 'firebase-functions';
+import { Request } from 'express';
 
 const USER_PARAMETERS_COLLECTION_NAME = 'userParameters';
 
@@ -11,7 +12,7 @@ export async function verifyIdTokenAndGetUid(idToken: string) {
     return uid;
 }
 
-export const extractIdTokenFromHttpRequest = (req: https.Request) => {
+export const extractIdTokenFromHttpRequest = (req: Request) => {
     logger.log('Extracting ID Token from header');
     const authHeader = req.headers['authorization'];
     if (authHeader && authHeader.startsWith('Bearer ')) {

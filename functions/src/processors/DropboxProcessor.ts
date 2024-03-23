@@ -1,21 +1,12 @@
-import { Dropbox, DropboxAuth, files as DropboxFiles } from 'dropbox';
-// import { https } from 'firebase-functions';
 import { promises as fs } from 'fs';
+import { Dropbox, DropboxAuth, files as DropboxFiles } from 'dropbox';
 
 export default class DropboxProcessor {
-    static FILE = 'file';
-    static DELETED = 'deleted';
-
     private dbx: Dropbox;
     private dbxAuth: DropboxAuth;
 
-    constructor(options: {
-        accessToken: string;
-        appKey: string;
-        appSecret: string;
-    }) {
-        const { accessToken, appKey, appSecret } = options;
-        console.log({ accessToken });
+    constructor(options: { appKey: string; appSecret: string }) {
+        const { appKey, appSecret } = options;
 
         this.validateRequiredOptions(options);
 
@@ -32,15 +23,10 @@ export default class DropboxProcessor {
     }
 
     private validateRequiredOptions(options: {
-        accessToken: string;
         appKey: string;
         appSecret: string;
     }) {
-        const { accessToken, appKey, appSecret } = options;
-
-        if (!accessToken) {
-            throw new Error('Dropbox Access Token is required');
-        }
+        const { appKey, appSecret } = options;
         if (!appKey) {
             throw new Error('Dropbox App Key is required');
         }

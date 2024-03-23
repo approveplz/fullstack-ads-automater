@@ -1,8 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
-import { https, Response } from 'firebase-functions';
 import { promises as fs } from 'fs';
-// import { onRequest } from 'firebase-functions/v2/https';
+import { Request, Response } from 'express';
 
 import {
     extractIdTokenFromHttpRequest,
@@ -109,10 +108,11 @@ const createFacebookAdsFunctionBatch = async (
 };
 
 export const createFacebookAdsFunction = async (
-    req: https.Request,
+    req: Request,
     res: Response
 ) => {
     try {
+        debugger;
         const idToken = extractIdTokenFromHttpRequest(req);
         const uid = await verifyIdTokenAndGetUid(idToken);
 
@@ -127,23 +127,15 @@ export const createFacebookAdsFunction = async (
             dailyBudget,
         } = userParameters;
 
-        const dropboxProcessor = new DropboxProcessor({
-            accessToken: process.env.DROPBOX_ACCESS_TOKEN || '',
-            appKey: process.env.DROPBOX_APP_KEY || '',
-            appSecret: process.env.DROPBOX_APP_SECRET || '',
-        });
-
-        const facebookAdsProcessor = new FacebookAdsProcessor(
-            {
-                appId: process.env.FACEBOOK_APP_ID || '',
-                appSecret: process.env.FACEBOOK_APP_SECRET || '',
-                accessToken: process.env.FACEBOOK_ACCESS_TOKEN || '',
-                accountId: process.env.FACEBOOK_ACCOUNT_ID || '',
-                pageId: process.env.FACEBOOK_PAGE_ID || '',
-                apiVersion: '19.0',
-            },
-            false
-        );
+        const dropboxProcessor = req.dropboxProcessor;
+        const facebookAdsProcessor = req.facebookAdsProcessor;
+        debugger;
+        if (!dropboxProcessor) {
+            throw new Error('Dropbox Processor not passed in with Request');
+        }
+        if (!facebookAdsProcessor) {
+            throw new Error('FacebookAdsProcessor not passed in with Request');
+        }
 
         const dropboxFiles = await dropboxProcessor.getFilesFromFolder(
             dropboxInputFolder,
@@ -291,10 +283,7 @@ export const createFacebookAdsFunction = async (
 // );
 
 // For testing
-export const deleteFacebookVideos = async (
-    req: https.Request,
-    res: Response
-) => {
+export const deleteFacebookVideos = async (req: Request, res: Response) => {
     const facebookAdsProcessor = new FacebookAdsProcessor(
         {
             appId: process.env.FACEBOOK_APP_ID || '',
