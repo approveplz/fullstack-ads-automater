@@ -1,4 +1,5 @@
-import { Dropbox, files as DropboxFiles } from 'dropbox';
+import { Dropbox, DropboxAuth, files as DropboxFiles } from 'dropbox';
+// import { https } from 'firebase-functions';
 import { promises as fs } from 'fs';
 
 export default class DropboxProcessor {
@@ -6,18 +7,46 @@ export default class DropboxProcessor {
     static DELETED = 'deleted';
 
     private dbx: Dropbox;
+    private dbxAuth: DropboxAuth;
 
-    constructor(options: { accessToken: string }) {
-        const { accessToken } = options;
+    constructor(options: {
+        accessToken: string;
+        appKey: string;
+        appSecret: string;
+    }) {
+        const { accessToken, appKey, appSecret } = options;
+        console.log({ accessToken });
+
+        this.validateRequiredOptions(options);
+
+        this.dbxAuth = new DropboxAuth({
+            clientId: appKey,
+            clientSecret: appSecret,
+        });
+
+        this.dbx = new Dropbox({
+            auth: this.dbxAuth,
+        });
+
+        console.log('Initialized Dropbox Processor');
+    }
+
+    private validateRequiredOptions(options: {
+        accessToken: string;
+        appKey: string;
+        appSecret: string;
+    }) {
+        const { accessToken, appKey, appSecret } = options;
 
         if (!accessToken) {
             throw new Error('Dropbox Access Token is required');
         }
-
-        this.dbx = new Dropbox({
-            accessToken: accessToken,
-        });
-        console.log('Initialized Dropbox Processor');
+        if (!appKey) {
+            throw new Error('Dropbox App Key is required');
+        }
+        if (!appSecret) {
+            throw new Error('Dropbox App Secret is required');
+        }
     }
 
     processFolderEntries(
@@ -33,37 +62,6 @@ export default class DropboxProcessor {
         });
         return files;
     }
-
-    // async getFilesFromFolder(
-    //     path: string,
-    //     limit?: number
-    // ): Promise<Record<string, DropboxFiles.FileMetadataReference>> {
-    //     console.log(`Getting files from Dropbox folder: ${path}`);
-    //     const response = await this.dbx.filesListFolder({
-    //         path,
-    //         limit,
-    //     });
-
-    //     let result = response.result;
-    //     const files = this.processFolderEntries({}, result.entries);
-
-    //     // Dropbox files are paginated
-    //     // Use continue api with cursor to get the rest
-    //     while (result.has_more) {
-    //         const response = await this.dbx.filesListFolderContinue({
-    //             cursor: result.cursor,
-    //         });
-    //         result = response.result;
-    //         this.processFolderEntries(files, result.entries);
-    //     }
-
-    //     console.log(
-    //         `Retrieved ${
-    //             Object.keys(files).length
-    //         } files from folder: ${path}\n`
-    //     );
-    //     return files;
-    // }
 
     async getFilesFromFolder(
         path: string,
@@ -167,5 +165,47 @@ export default class DropboxProcessor {
         await this.dbx.filesMoveBatchV2({ entries });
 
         console.log(`Moved ${entries.length} files to ${toPath}\n`);
+    }
+
+    async getAuthUrl() {
+        const dropboxScopes = [
+            'files.metadata.write',
+            'files.content.write',
+            'files.content.read',
+        ];
+
+        return this.dbxAuth.getAuthenticationUrl(
+            'http://127.0.0.1:5001/facebook-ads-automater/us-central1/api/auth/dropbox/callback',
+            undefined,
+            'code',
+            'offline',
+            dropboxScopes,
+            'none',
+            false
+        );
+    }
+
+    async getAccessTokenFromCode(code: string) {
+        try {
+            const token = await this.dbxAuth.getAccessTokenFromCode(
+                'http://127.0.0.1:5001/facebook-ads-automater/us-central1/api/auth/dropbox/callback',
+                code
+            );
+
+            console.log({ token: JSON.stringify(token) });
+
+            const tokenResult: any = token.result;
+
+            const { refresh_token, access_token, expires_in } = tokenResult;
+
+            this.dbxAuth.setRefreshToken(refresh_token);
+            this.dbxAuth.setAccessToken(access_token);
+            this.dbxAuth.setAccessTokenExpiresAt(
+                // expires_in is in seconds
+                new Date(new Date().getTime() + expires_in * 1000)
+            );
+        } catch (e) {
+            console.log(e);
+        }
     }
 }

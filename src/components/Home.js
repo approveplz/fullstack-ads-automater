@@ -145,6 +145,18 @@ const Home = () => {
         setLoading(false);
     };
 
+    const handleAuthDropbox = async () => {
+        const url = `${apiUrl}/auth/dropbox`;
+
+        setLoading(true);
+        const response = await axios.get(url);
+
+        const { redirectUrl } = response.data;
+        console.log('Response data:', response.data);
+
+        window.location.href = redirectUrl;
+    };
+
     const currentUser = useAuth();
 
     return (
@@ -357,6 +369,12 @@ const Home = () => {
             <button disabled={loading} onClick={handleTestDelete}>
                 clean up for testing
             </button>
+            <Button
+                label="auth dropbox"
+                busy={loading}
+                disabled={loading}
+                onClick={handleAuthDropbox}
+            />
             <Grid columns="medium" gap="large" pad={{ bottom: 'large' }}>
                 <CardTemplate title="this is a card" />
                 <CardTemplate title="this is another card" />

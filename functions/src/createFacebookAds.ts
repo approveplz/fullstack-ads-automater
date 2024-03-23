@@ -129,6 +129,8 @@ export const createFacebookAdsFunction = async (
 
         const dropboxProcessor = new DropboxProcessor({
             accessToken: process.env.DROPBOX_ACCESS_TOKEN || '',
+            appKey: process.env.DROPBOX_APP_KEY || '',
+            appSecret: process.env.DROPBOX_APP_SECRET || '',
         });
 
         const facebookAdsProcessor = new FacebookAdsProcessor(
