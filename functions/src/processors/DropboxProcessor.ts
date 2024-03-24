@@ -4,6 +4,11 @@ import { Dropbox, DropboxAuth, files as DropboxFiles } from 'dropbox';
 export default class DropboxProcessor {
     private dbx: Dropbox;
     private dbxAuth: DropboxAuth;
+    private dropboxScopes = [
+        'files.metadata.write',
+        'files.content.write',
+        'files.content.read',
+    ];
 
     constructor(options: { appKey: string; appSecret: string }) {
         const { appKey, appSecret } = options;
@@ -153,45 +158,53 @@ export default class DropboxProcessor {
         console.log(`Moved ${entries.length} files to ${toPath}\n`);
     }
 
-    async getAuthUrl() {
-        const dropboxScopes = [
-            'files.metadata.write',
-            'files.content.write',
-            'files.content.read',
-        ];
+    private getAuthCallbackUrl() {
+        const apiBaseUrl =
+            process.env.NODE_ENV === 'production'
+                ? process.env.API_BASE_URL_PROD
+                : process.env.API_BASE_URL_DEV;
 
+        if (!apiBaseUrl) {
+            throw new Error('Could not get API base URL from env');
+        }
+
+        return `${apiBaseUrl}/auth/dropbox/callback`;
+    }
+
+    async getAuthUrl(uid: string) {
         return this.dbxAuth.getAuthenticationUrl(
-            'http://127.0.0.1:5001/facebook-ads-automater/us-central1/api/auth/dropbox/callback',
-            undefined,
+            this.getAuthCallbackUrl(),
+            uid,
             'code',
             'offline',
-            dropboxScopes,
+            this.dropboxScopes,
             'none',
             false
         );
     }
 
-    async getAccessTokenFromCode(code: string) {
+    async handleGetRefreshTokenFromCode(code: string) {
         try {
             const token = await this.dbxAuth.getAccessTokenFromCode(
-                'http://127.0.0.1:5001/facebook-ads-automater/us-central1/api/auth/dropbox/callback',
+                this.getAuthCallbackUrl(),
                 code
             );
 
-            console.log({ token: JSON.stringify(token) });
+            const { refresh_token: refreshToken } = token.result as {
+                refresh_token: string;
+            };
 
-            const tokenResult: any = token.result;
-
-            const { refresh_token, access_token, expires_in } = tokenResult;
-
-            this.dbxAuth.setRefreshToken(refresh_token);
-            this.dbxAuth.setAccessToken(access_token);
-            this.dbxAuth.setAccessTokenExpiresAt(
-                // expires_in is in seconds
-                new Date(new Date().getTime() + expires_in * 1000)
-            );
+            this.dbxAuth.setRefreshToken(refreshToken);
         } catch (e) {
             console.log(e);
         }
+    }
+
+    getRefreshToken() {
+        return this.dbxAuth.getRefreshToken();
+    }
+
+    setRefreshToken(refreshToken: string) {
+        return this.dbxAuth.setRefreshToken(refreshToken);
     }
 }

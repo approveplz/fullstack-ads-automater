@@ -10,15 +10,20 @@ import {
     getDropboxAuthUrl,
     getAuthTokensFromDropboxCodeAndRedirect,
 } from './handleDropboxAuth.js';
+import { verifyIdTokenAndGetUid } from './cloudHelpers.js';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
 
 declare module 'express-serve-static-core' {
     interface Request {
         dropboxProcessor?: DropboxProcessor;
         facebookAdsProcessor?: FacebookAdsProcessor;
+        uid?: string;
     }
 }
+
+dotenv.config();
 
 admin.initializeApp();
 
@@ -57,8 +62,35 @@ function useFacebookAdsProcessor(
     next();
 }
 
+async function extractUidFromTokenMiddleware(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
+    console.log('Extracting ID Token from header');
+    try {
+        const authHeader = req.headers['authorization'];
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.split(' ')[1];
+            // console.log({ token });
+            // req.firebaseIdToken = token;
+            const uid = await verifyIdTokenAndGetUid(token);
+            req.uid = uid;
+
+            next();
+        } else {
+            res.status(401).send('Unable to extract ID Token');
+        }
+    } catch (e) {
+        res.status(401).send('Unable to extract ID Token or uid');
+    }
+}
+
+// app.use(extractUidFromTokenMiddleware);
+
 app.get(
     '/process',
+    extractUidFromTokenMiddleware,
     useDropboxProcessor,
     useFacebookAdsProcessor,
     createFacebookAdsFunction
@@ -70,7 +102,12 @@ app.get('/cleanup', useFacebookAdsProcessor, deleteFacebookVideos);
 Dropbox Authorization Routes
 */
 
-app.get('/auth/dropbox', useDropboxProcessor, getDropboxAuthUrl);
+app.get(
+    '/auth/dropbox',
+    extractUidFromTokenMiddleware,
+    useDropboxProcessor,
+    getDropboxAuthUrl
+);
 
 app.get(
     '/auth/dropbox/callback',

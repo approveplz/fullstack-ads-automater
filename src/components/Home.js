@@ -101,7 +101,6 @@ const Home = () => {
     };
 
     const handleSubmit = async (event) => {
-        event.preventDefault();
         setLoading(true);
         await saveUserParameters(formData);
         console.log(formData);
@@ -140,7 +139,12 @@ const Home = () => {
 
         const url = `${apiUrl}/cleanup`;
 
-        const response = await axios.get(url);
+        const idToken = await currentUser.getIdToken();
+        const response = await axios.get(url, {
+            headers: {
+                Authorization: `Bearer ${idToken}`,
+            },
+        });
 
         setLoading(false);
     };
@@ -149,7 +153,13 @@ const Home = () => {
         const url = `${apiUrl}/auth/dropbox`;
 
         setLoading(true);
-        const response = await axios.get(url);
+        const idToken = await currentUser.getIdToken();
+        console.log({ idToken });
+        const response = await axios.get(url, {
+            headers: {
+                Authorization: `Bearer ${idToken}`,
+            },
+        });
 
         const { redirectUrl } = response.data;
         console.log('Response data:', response.data);
@@ -346,6 +356,7 @@ const Home = () => {
                         disabled={loading}
                         busy={loading}
                         label="Save Parameters"
+                        type="submit"
                         primary
                     />
                 </Form>

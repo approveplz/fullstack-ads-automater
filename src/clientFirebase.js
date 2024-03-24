@@ -9,6 +9,7 @@ import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 
 const USER_PARAMETERS_COLLECTION_NAME = 'userParameters';
+const USER_INFO_COLLECTION_NAME = 'userInfo';
 
 // Safe to use clientside
 const firebaseConfig = {
@@ -28,6 +29,30 @@ const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 export const auth = getAuth();
 
+export function signUp(email, password) {
+    return createUserWithEmailAndPassword(auth, email, password);
+}
+
+export function useAuth() {
+    const [currentUser, setCurrentUser] = useState();
+
+    useEffect(() => {
+        const unsub = onAuthStateChanged(auth, (user) => {
+            setCurrentUser(user);
+        });
+        return unsub;
+    }, []);
+
+    return currentUser;
+}
+
+export function logout() {
+    signOut(auth);
+}
+
+/*
+userParameters Collection
+*/
 export async function getUserParameters() {
     const user = auth.currentUser;
     if (!user) {
@@ -58,27 +83,19 @@ export async function saveUserParameters(parameters) {
         parameters
     );
 
-    console.log(`saved`);
     return;
 }
 
-export function signUp(email, password) {
-    return createUserWithEmailAndPassword(auth, email, password);
-}
+/*
+userInfo Collection
+*/
+export async function saveUserInfo(parameters) {
+    const user = auth.currentUser;
+    if (!user) {
+        return;
+    }
 
-export function useAuth() {
-    const [currentUser, setCurrentUser] = useState();
-
-    useEffect(() => {
-        const unsub = onAuthStateChanged(auth, (user) => {
-            setCurrentUser(user);
-        });
-        return unsub;
-    }, []);
-
-    return currentUser;
-}
-
-export function logout() {
-    signOut(auth);
+    await setDoc(doc(db, USER_INFO_COLLECTION_NAME, user.uid), parameters, {
+        merge: true,
+    });
 }

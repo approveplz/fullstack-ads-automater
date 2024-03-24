@@ -1,12 +1,10 @@
-import dotenv from 'dotenv';
 import path from 'path';
 import { promises as fs } from 'fs';
 import { Request, Response } from 'express';
 
 import {
-    extractIdTokenFromHttpRequest,
+    getUserInfoCloud,
     getUserParametersCloud,
-    verifyIdTokenAndGetUid,
     UserParameters,
 } from './cloudHelpers.js';
 
@@ -14,8 +12,6 @@ import DropboxProcessor from './processors/DropboxProcessor.js';
 import FacebookAdsProcessor from './processors/FacebookAdsProcessor.js';
 import { files as DropboxFiles } from 'dropbox/types/dropbox_types.js';
 import { Campaign } from 'facebook-nodejs-business-sdk';
-
-dotenv.config();
 
 const tempLocalFolder = '/tmp'; // Google Cloud Functions temporary storage
 
@@ -112,12 +108,12 @@ export const createFacebookAdsFunction = async (
     res: Response
 ) => {
     try {
-        debugger;
-        const idToken = extractIdTokenFromHttpRequest(req);
-        const uid = await verifyIdTokenAndGetUid(idToken);
+        const uid = req.uid;
+        if (!uid) {
+            throw new Error('firebase ID token not passed in with request');
+        }
 
         const userParameters = await getUserParametersCloud(uid);
-        // console.log({ userParameters });
 
         const {
             dropboxInputFolder,
@@ -129,7 +125,6 @@ export const createFacebookAdsFunction = async (
 
         const dropboxProcessor = req.dropboxProcessor;
         const facebookAdsProcessor = req.facebookAdsProcessor;
-        debugger;
         if (!dropboxProcessor) {
             throw new Error('Dropbox Processor not passed in with Request');
         }
@@ -137,13 +132,19 @@ export const createFacebookAdsFunction = async (
             throw new Error('FacebookAdsProcessor not passed in with Request');
         }
 
+        const userInfo = await getUserInfoCloud(uid);
+
+        const { dropboxRefreshToken = '' } = userInfo.dropboxAuthInfo || {};
+
+        dropboxProcessor.setRefreshToken(dropboxRefreshToken);
+
         const dropboxFiles = await dropboxProcessor.getFilesFromFolder(
             dropboxInputFolder,
             10 // this can be anything
         );
 
         if (!dropboxFiles.length) {
-            res.status(204).send('No files found');
+            return res.status(204).send('No files found');
         }
 
         const campaign = await facebookAdsProcessor.createCampaign({
@@ -181,12 +182,16 @@ export const createFacebookAdsFunction = async (
             batchIndex += 1;
         }
 
-        res.status(200).send(
-            `Ads processing completed successfully. ${JSON.stringify(ads)}`
-        );
+        console.log('Facebook Ads created successfully');
+
+        return res
+            .status(200)
+            .send(
+                `Ads processing completed successfully. ${JSON.stringify(ads)}`
+            );
     } catch (e) {
         console.error((e as Error).message);
-        res.status(500).send('Error processing ads.');
+        return res.status(500).send('Error processing ads.');
     }
 };
 
