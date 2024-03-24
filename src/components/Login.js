@@ -5,7 +5,7 @@ import 'firebaseui/dist/firebaseui.css';
 import { auth } from '../clientFirebase.js';
 import { useEffect } from 'react';
 
-const Auth = () => {
+const Login = () => {
     useEffect(() => {
         const ui =
             firebaseui.auth.AuthUI.getInstance() ||
@@ -18,15 +18,16 @@ const Auth = () => {
                     redirectUrl
                 ) {
                     // Action if the user is authenticated successfully
+                    // Return true to redirect to signInSuccessUrl
                     return true;
                 },
                 uiShown: function () {
-                    // This is what should happen when the form is full loaded. In this example, I hide the loader element.
+                    // This is what should happen when the form is full loaded
                 },
             },
             signInSuccessUrl: '/home',
             signInOptions: [
-                // This array contains all the ways an user can authenticate in your application. For this example, is only by email.
+                // This array contains all the ways an user can authenticate in your application. d
                 {
                     provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
                     requireDisplayName: false,
@@ -49,4 +50,4 @@ const Auth = () => {
     );
 };
 
-export default Auth;
+export default Login;

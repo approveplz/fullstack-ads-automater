@@ -69,6 +69,14 @@ async function extractUidFromTokenMiddleware(
 ) {
     console.log('Extracting ID Token from header');
     try {
+        /*
+        The uid should only be added to the request by this middleware function
+        Cloud functions use the admin Firestore, which doesnt respect the client Firestore rules
+        */
+        if (req.uid) {
+            res.status(400).send('Unauthorized attempt detected.');
+        }
+
         const authHeader = req.headers['authorization'];
         if (authHeader && authHeader.startsWith('Bearer ')) {
             const token = authHeader.split(' ')[1];

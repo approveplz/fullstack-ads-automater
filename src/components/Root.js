@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { useAuth, logout } from './clientFirebase.js';
+import { useAuth, logout } from '../clientFirebase.js';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -12,7 +12,7 @@ import {
     grommet,
 } from 'grommet';
 import { deepMerge } from 'grommet/utils/index.js';
-import AppBar from './components/AppBar.js';
+import AppBar from './AppBar.js';
 
 const theme = deepMerge(grommet, {
     global: {

@@ -110,7 +110,7 @@ export const createFacebookAdsFunction = async (
     try {
         const uid = req.uid;
         if (!uid) {
-            throw new Error('firebase ID token not passed in with request');
+            throw new Error('uid not passed in with request');
         }
 
         const userParameters = await getUserParametersCloud(uid);
