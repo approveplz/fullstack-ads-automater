@@ -18,13 +18,13 @@ const Auth = () => {
                     redirectUrl
                 ) {
                     // Action if the user is authenticated successfully
-                    console.log('sign in success');
-                    console.log({ authResult });
+                    return true;
                 },
                 uiShown: function () {
                     // This is what should happen when the form is full loaded. In this example, I hide the loader element.
                 },
             },
+            signInSuccessUrl: '/home',
             signInOptions: [
                 // This array contains all the ways an user can authenticate in your application. For this example, is only by email.
                 {
@@ -44,7 +44,6 @@ const Auth = () => {
 
     return (
         <>
-            <h1 className="text-center my-3 title">Login Page</h1>
             <div id="firebaseui-auth-container"></div>
         </>
     );
