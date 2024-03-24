@@ -18,9 +18,8 @@ const FileStorageAuth = () => {
         window.location.href = redirectUrl;
     };
 
-    const {
-        dropboxAuthInfo: { dropboxRefreshToken },
-    } = userInfoFromFirestore;
+    const dropboxRefreshToken =
+        userInfoFromFirestore?.dropboxAuthInfo?.dropboxRefreshToken;
 
     console.log({ dropboxRefreshToken });
 

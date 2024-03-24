@@ -3,13 +3,29 @@ const CardTemplate = ({ title, children, footer }) => {
     // const size = useContext(ResponsiveContext);
 
     return (
-        <Card>
-            <CardHeader pad="medium">
+        <Card width="large">
+            <CardHeader
+                background="background-contrast"
+                pad={{
+                    vertical: 'medium',
+                    horizontal: 'medium',
+                    bottom: 'small',
+                }}
+            >
                 <Heading level={2} margin="none">
                     {title}
                 </Heading>
             </CardHeader>
-            <CardBody pad="medium">{children}</CardBody>
+            <CardBody
+                // pad={{
+                //     top: 'none',
+                //     bottom: 'medium',
+                //     horizontal: 'medium',
+                // }}
+                pad="medium"
+            >
+                {children}
+            </CardBody>
             <CardFooter pad="medium" background="background-contrast">
                 {footer}
             </CardFooter>

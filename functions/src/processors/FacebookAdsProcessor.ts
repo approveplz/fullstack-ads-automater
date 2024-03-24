@@ -90,23 +90,19 @@ export default class FacebookAdsProcessor {
     // @ts-ignore
     private appSecret: string;
     private accessToken: string;
-    private showDebuggingInfo: boolean;
     private accountId: string;
     private pageId: string;
     private apiVersion: string;
     private adAccount: AdAccount;
 
-    constructor(
-        options: {
-            appId: string;
-            appSecret: string;
-            accessToken: string;
-            accountId: string;
-            pageId: string;
-            apiVersion?: string;
-        },
-        showDebuggingInfo = false
-    ) {
+    constructor(options: {
+        appId: string;
+        appSecret: string;
+        accessToken: string;
+        accountId: string;
+        pageId: string;
+        apiVersion?: string;
+    }) {
         this.validateRequiredOptions(options);
 
         const {
@@ -121,7 +117,6 @@ export default class FacebookAdsProcessor {
         this.appId = appId;
         this.appSecret = appSecret;
         this.accessToken = accessToken;
-        this.showDebuggingInfo = showDebuggingInfo;
         this.accountId = accountId;
         this.pageId = pageId;
         this.apiVersion = apiVersion;
@@ -147,9 +142,7 @@ export default class FacebookAdsProcessor {
 
     logApiCallResult(apiCallName: string, data: any) {
         console.log(apiCallName);
-        if (this.showDebuggingInfo) {
-            console.log('Data:' + JSON.stringify(data, null, 2));
-        }
+        console.log('Data:' + JSON.stringify(data, null, 2));
     }
 
     async uploadAdVideo(params: {

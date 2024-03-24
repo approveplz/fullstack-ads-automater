@@ -36,17 +36,14 @@ const dropboxProcessor = new DropboxProcessor({
     appSecret: process.env.DROPBOX_APP_SECRET || '',
 });
 
-const facebookAdsProcessor = new FacebookAdsProcessor(
-    {
-        appId: process.env.FACEBOOK_APP_ID || '',
-        appSecret: process.env.FACEBOOK_APP_SECRET || '',
-        accessToken: process.env.FACEBOOK_ACCESS_TOKEN || '',
-        accountId: process.env.FACEBOOK_ACCOUNT_ID || '',
-        pageId: process.env.FACEBOOK_PAGE_ID || '',
-        apiVersion: '19.0',
-    },
-    false
-);
+const facebookAdsProcessor = new FacebookAdsProcessor({
+    appId: process.env.FACEBOOK_APP_ID || '',
+    appSecret: process.env.FACEBOOK_APP_SECRET || '',
+    accessToken: process.env.FACEBOOK_ACCESS_TOKEN || '',
+    accountId: process.env.FACEBOOK_ACCOUNT_ID || '',
+    pageId: process.env.FACEBOOK_PAGE_ID || '',
+    apiVersion: '19.0',
+});
 
 function useDropboxProcessor(req: Request, res: Response, next: NextFunction) {
     req.dropboxProcessor = dropboxProcessor;

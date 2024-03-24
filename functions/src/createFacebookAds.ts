@@ -289,17 +289,14 @@ export const createFacebookAdsFunction = async (
 
 // For testing
 export const deleteFacebookVideos = async (req: Request, res: Response) => {
-    const facebookAdsProcessor = new FacebookAdsProcessor(
-        {
-            appId: process.env.FACEBOOK_APP_ID || '',
-            appSecret: process.env.FACEBOOK_APP_SECRET || '',
-            accessToken: process.env.FACEBOOK_ACCESS_TOKEN || '',
-            accountId: process.env.FACEBOOK_ACCOUNT_ID || '',
-            pageId: process.env.FACEBOOK_PAGE_ID || '',
-            apiVersion: '19.0',
-        },
-        true
-    );
+    const facebookAdsProcessor = new FacebookAdsProcessor({
+        appId: process.env.FACEBOOK_APP_ID || '',
+        appSecret: process.env.FACEBOOK_APP_SECRET || '',
+        accessToken: process.env.FACEBOOK_ACCESS_TOKEN || '',
+        accountId: process.env.FACEBOOK_ACCOUNT_ID || '',
+        pageId: process.env.FACEBOOK_PAGE_ID || '',
+        apiVersion: '19.0',
+    });
 
     try {
         await facebookAdsProcessor.cleanup();

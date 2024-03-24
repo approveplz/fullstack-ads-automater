@@ -54,7 +54,7 @@ const Root = () => {
                         />
                     )}
                 </AppBar>
-                <PageContent>
+                <PageContent align="center">
                     <Outlet />
                 </PageContent>
             </Page>

@@ -26,14 +26,17 @@ import {
 } from 'grommet';
 import FileStorageAuth from './FileStorageAuth.js';
 import CardTemplate from './CardTemplate.js';
-
+ 
 import UserParameters from './UserParameters.js';
 
 const Home = () => {
     return (
-        <Box align="center" justify="start" pad="large" gap="medium">
+        <Box align="center" justify="start" pad="large" gap="medium" width='large'>
             <CardTemplate title="Authorize Your File Storage Provider">
                 <FileStorageAuth />
+            </CardTemplate>
+            <CardTemplate title="Enter Your Parameters" width='large'>
+                <UserParameters />
             </CardTemplate>
         </Box>
     );
