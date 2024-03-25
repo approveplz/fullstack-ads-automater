@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
-import { useAuth, logout } from '../clientFirebase.js';
-import { useEffect, useState } from 'react';
+import { logout } from '../clientFirebase.js';
+import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Grommet,
@@ -12,23 +12,49 @@ import {
     grommet,
 } from 'grommet';
 import { deepMerge } from 'grommet/utils/index.js';
+import { UserContext } from '../UserContext.js';
 import AppBar from './AppBar.js';
+
+import { TestingDeleteButton } from './Process.js';
 
 const theme = deepMerge(grommet, {
     global: {
-        colors: {
-            brand: '#228BE6',
-        },
+        // colors: {
+        //     brand: '#228BE6',
+        // },
         font: {
             family: 'Roboto',
             size: '18px',
             height: '20px',
         },
     },
+    formField: {
+        label: {
+            weight: 'bold',
+            size: 'xlarge',
+        },
+    },
+    tab: {
+        active: {
+            color: 'brand',
+        },
+        color: 'black',
+        border: {
+            color: 'black',
+            size: 'medium',
+            active: {
+                color: 'brand',
+            },
+        },
+        pad: 'small',
+        hover: {
+            color: 'brand',
+        },
+    },
 });
 
 const Root = () => {
-    const currentUser = useAuth();
+    const { currentUser } = useContext(UserContext);
     const navigate = useNavigate();
 
     return (
@@ -39,7 +65,6 @@ const Root = () => {
                     {currentUser ? (
                         <Button
                             label="Sign Out"
-                            // disabled={loading}
                             onClick={() => {
                                 logout();
                                 navigate('landing');
@@ -58,6 +83,8 @@ const Root = () => {
                     <Outlet />
                 </PageContent>
             </Page>
+            {/* For testing only */}
+            <TestingDeleteButton currentUser={currentUser} />
         </Grommet>
     );
 };

@@ -5,7 +5,6 @@ import {
     getUserParameters,
 } from '../clientFirebase.js';
 import { useContext, useEffect, useState } from 'react';
-import axios from 'axios';
 import {
     Button,
     Box,
@@ -28,12 +27,7 @@ import { Moon, Sun } from 'grommet-icons';
 import FileStorageAuth from './FileStorageAuth.js';
 import CardTemplate from './CardTemplate.js';
 
-const apiUrl =
-    process.env.NODE_ENV === 'production'
-        ? 'https://api-ccsi5asyva-uc.a.run.app'
-        : 'http://127.0.0.1:5001/facebook-ads-automater/us-central1/api';
-
-// TODO ad validation
+// TODO add validation
 // TODO fix UI
 const UserParameters = () => {
     useEffect(() => {
@@ -77,6 +71,8 @@ const UserParameters = () => {
         websiteUrl: 'https://onno.com',
     });
 
+    const [isEditable, setIsEditable] = useState(false);
+
     const [loading, setLoading] = useState(false);
 
     const handleChange = (event) => {
@@ -84,74 +80,14 @@ const UserParameters = () => {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = async (event) => {
+    const handleSubmit = async () => {
+        console.log('form submite');
         setLoading(true);
         await saveUserParameters(formData);
         console.log(formData);
         setLoading(false);
+        setIsEditable(false);
     };
-
-    // const handleProcess = async () => {
-    //     const startTime = Date.now();
-    //     setLoading(true);
-
-    //     console.log({ nodeEnv: process.env.NODE_ENV });
-
-    //     try {
-    //         const idToken = await currentUser.getIdToken();
-    //         const url = `${apiUrl}/process`;
-
-    //         const response = await axios.get(url, {
-    //             headers: {
-    //                 Authorization: `Bearer ${idToken}`,
-    //             },
-    //         });
-
-    //         console.log('Response data:', response.data);
-    //     } catch (error) {
-    //         console.error('Error during the process:', error);
-    //     } finally {
-    //         setLoading(false);
-    //         const endTime = Date.now();
-    //         const elapsedTime = endTime - startTime;
-    //         console.log(`Elapsed time: ${elapsedTime / 1000} sec`);
-    //     }
-    // };
-
-    // const handleTestDelete = async () => {
-    //     setLoading(true);
-
-    //     const url = `${apiUrl}/cleanup`;
-
-    //     const idToken = await currentUser.getIdToken();
-    //     const response = await axios.get(url, {
-    //         headers: {
-    //             Authorization: `Bearer ${idToken}`,
-    //         },
-    //     });
-
-    //     setLoading(false);
-    // };
-
-    // const handleAuthDropbox = async () => {
-    //     const url = `${apiUrl}/auth/dropbox`;
-
-    //     setLoading(true);
-    //     const idToken = await currentUser.getIdToken();
-    //     console.log({ idToken });
-    //     const response = await axios.get(url, {
-    //         headers: {
-    //             Authorization: `Bearer ${idToken}`,
-    //         },
-    //     });
-
-    //     const { redirectUrl } = response.data;
-    //     console.log('Response data:', response.data);
-
-    //     window.location.href = redirectUrl;
-    // };
-
-    // const currentUser = useAuth();
 
     return (
         <Form onSubmit={handleSubmit}>
@@ -163,6 +99,8 @@ const UserParameters = () => {
                 name="dropboxInputFolder"
             >
                 <TextInput
+                    disabled={!isEditable}
+                    size="small"
                     name="dropboxInputFolder"
                     value={formData.dropboxInputFolder}
                     onChange={handleChange}
@@ -173,6 +111,8 @@ const UserParameters = () => {
                 name="dropboxProcessedFolder"
             >
                 <TextInput
+                    disabled={!isEditable}
+                    size="small"
                     name="dropboxProcessedFolder"
                     value={formData.dropboxProcessedFolder}
                     onChange={handleChange}
@@ -181,6 +121,8 @@ const UserParameters = () => {
             <Heading level={3}>Campaign Parameters</Heading>
             <FormField label="Campaign Name" name="campaignName">
                 <TextInput
+                    disabled={!isEditable}
+                    size="small"
                     name="campaignName"
                     value={formData.campaignName}
                     onChange={handleChange}
@@ -188,6 +130,8 @@ const UserParameters = () => {
             </FormField>
             <FormField label="Campaign Objective" name="objective">
                 <Select
+                    disabled={!isEditable}
+                    size="small"
                     name="objective"
                     options={[
                         {
@@ -202,6 +146,8 @@ const UserParameters = () => {
             </FormField>
             <FormField label="Bid Strategy" name="bidStrategy">
                 <Select
+                    disabled={!isEditable}
+                    size="small"
                     name="bidStrategy"
                     options={[
                         {
@@ -217,6 +163,8 @@ const UserParameters = () => {
             <FormField label="Daily Budget:" name="dailyBudget">
                 {/* Add validation to make sure its a number */}
                 <TextInput
+                    disabled={!isEditable}
+                    size="small"
                     name="dailyBudget"
                     value={formData.dailyBudget}
                     onChange={handleChange}
@@ -225,6 +173,8 @@ const UserParameters = () => {
             <Heading level={3}>Ad Set Parameters</Heading>
             <FormField label="Ad Set Name:" name="adSetName">
                 <TextInput
+                    disabled={!isEditable}
+                    size="small"
                     name="adSetName"
                     value={formData.adSetName}
                     onChange={handleChange}
@@ -232,6 +182,8 @@ const UserParameters = () => {
             </FormField>
             <FormField label="Bid Amount" name="bidAmount">
                 <TextInput
+                    disabled={!isEditable}
+                    size="small"
                     type="number"
                     name="bidAmount"
                     value={formData.bidAmount}
@@ -240,6 +192,8 @@ const UserParameters = () => {
             </FormField>
             <FormField label="Billing Event" name="billingEvent">
                 <Select
+                    disabled={!isEditable}
+                    size="small"
                     name="billingEvent"
                     labelKey="label"
                     valueKey="value"
@@ -255,6 +209,8 @@ const UserParameters = () => {
             </FormField>
             <FormField label="Optimization Goal" name="optimizationGoal">
                 <Select
+                    disabled={!isEditable}
+                    size="small"
                     name="optimizationGoal"
                     labelKey="label"
                     valueKey="value"
@@ -271,6 +227,8 @@ const UserParameters = () => {
             <Heading level={3}>Ad Creative Parameters</Heading>
             <FormField label="Ad Creative Name" name="adCreativeName">
                 <TextInput
+                    disabled={!isEditable}
+                    size="small"
                     name="adCreativeName"
                     value={formData.adCreativeName}
                     onChange={handleChange}
@@ -278,6 +236,8 @@ const UserParameters = () => {
             </FormField>
             <FormField label="Bodies (comma-separated)" name="bodies">
                 <TextInput
+                    disabled={!isEditable}
+                    size="small"
                     name="bodies"
                     value={formData.bodies.join(',')}
                     onChange={(e) =>
@@ -293,6 +253,8 @@ const UserParameters = () => {
             </FormField>
             <FormField label="Titles (comma-separated)" name="titles">
                 <TextInput
+                    disabled={!isEditable}
+                    size="small"
                     name="titles"
                     value={formData.titles.join(',')}
                     onChange={(e) =>
@@ -311,6 +273,8 @@ const UserParameters = () => {
                 name="descriptions"
             >
                 <TextArea
+                    disabled={!isEditable}
+                    size="small"
                     name="descriptions"
                     value={formData.descriptions.join(',')}
                     onChange={(e) =>
@@ -326,249 +290,35 @@ const UserParameters = () => {
             </FormField>
             <FormField label="Website URL" name="websiteUrl">
                 <TextInput
+                    disabled={!isEditable}
+                    size="small"
                     type="url"
                     name="websiteUrl"
                     value={formData.websiteUrl}
                     onChange={handleChange}
                 />
             </FormField>
-            <Button
-                disabled={loading}
-                busy={loading}
-                label="Save Parameters"
-                type="submit"
-                primary
-            />
+            {isEditable ? (
+                <Button
+                    disabled={loading}
+                    busy={loading}
+                    label="Save Parameters"
+                    type="submit"
+                    primary
+                />
+            ) : (
+                <Button
+                    label="Edit Parameters"
+                    primary
+                    onClick={(e) => {
+                        // The form is being submitted even with type='button' for some reason...
+                        e.preventDefault();
+                        setIsEditable(true);
+                    }}
+                />
+            )}
         </Form>
     );
-
-    // return (
-    //     <Box align="center" justify="start" pad="large" gap="medium">
-    //         <Text pad="large">{JSON.stringify(formData)}</Text>
-    //         {/* <CardTemplate title="Authorize your file storage provider">
-    //             <FileStorageAuth />
-    //         </CardTemplate> */}
-    //         <CardTemplate title="Enter your parameters">
-    //             <Form onSubmit={handleSubmit}>
-    //                 <Heading level={3}>Dropbox Parameters</Heading>
-    //                 <FormField
-    //                     label="Dropbox Input Folder Name"
-    //                     name="dropboxInputFolder"
-    //                 >
-    //                     <TextInput
-    //                         name="dropboxInputFolder"
-    //                         value={formData.dropboxInputFolder}
-    //                         onChange={handleChange}
-    //                     />
-    //                 </FormField>
-    //                 <FormField
-    //                     label="Dropbox Processed Folder Name"
-    //                     name="dropboxProcessedFolder"
-    //                 >
-    //                     <TextInput
-    //                         name="dropboxProcessedFolder"
-    //                         value={formData.dropboxProcessedFolder}
-    //                         onChange={handleChange}
-    //                     />
-    //                 </FormField>
-    //                 <Heading level={3}>Campaign Parameters</Heading>
-    //                 <FormField label="Campaign Name" name="campaignName">
-    //                     <TextInput
-    //                         name="campaignName"
-    //                         value={formData.campaignName}
-    //                         onChange={handleChange}
-    //                     />
-    //                 </FormField>
-    //                 <FormField label="Campaign Objective" name="objective">
-    //                     <Select
-    //                         name="objective"
-    //                         options={[
-    //                             {
-    //                                 label: 'Outcome Traffic',
-    //                                 value: 'OUTCOME_TRAFFIC',
-    //                             },
-    //                         ]}
-    //                         value={formData.campaignObjective}
-    //                         labelKey="label"
-    //                         valueKey="value"
-    //                     />
-    //                 </FormField>
-    //                 <FormField label="Bid Strategy" name="bidStrategy">
-    //                     <Select
-    //                         name="bidStrategy"
-    //                         options={[
-    //                             {
-    //                                 label: 'Lowest Cost With Bid Cap',
-    //                                 value: 'LOWEST_COST_WITH_BID_CAP',
-    //                             },
-    //                         ]}
-    //                         value={formData.bidStrategy}
-    //                         labelKey="label"
-    //                         valueKey="value"
-    //                     />
-    //                 </FormField>
-    //                 <FormField label="Daily Budget:" name="dailyBudget">
-    //                     {/* Add validation to make sure its a number */}
-    //                     <TextInput
-    //                         name="dailyBudget"
-    //                         value={formData.dailyBudget}
-    //                         onChange={handleChange}
-    //                     />
-    //                 </FormField>
-    //                 <Heading level={3}>Ad Set Parameters</Heading>
-    //                 <FormField label="Ad Set Name:" name="adSetName">
-    //                     <TextInput
-    //                         name="adSetName"
-    //                         value={formData.adSetName}
-    //                         onChange={handleChange}
-    //                     />
-    //                 </FormField>
-    //                 <FormField label="Bid Amount" name="bidAmount">
-    //                     <TextInput
-    //                         type="number"
-    //                         name="bidAmount"
-    //                         value={formData.bidAmount}
-    //                         onChange={handleChange}
-    //                     />
-    //                 </FormField>
-    //                 <FormField label="Billing Event" name="billingEvent">
-    //                     <Select
-    //                         name="billingEvent"
-    //                         labelKey="label"
-    //                         valueKey="value"
-    //                         options={[
-    //                             {
-    //                                 label: 'Impressions',
-    //                                 value: 'IMPRESSIONS',
-    //                             },
-    //                         ]}
-    //                         value={formData.billingEvent}
-    //                         onChange={handleChange}
-    //                     />
-    //                 </FormField>
-    //                 <FormField
-    //                     label="Optimization Goal"
-    //                     name="optimizationGoal"
-    //                 >
-    //                     <Select
-    //                         name="optimizationGoal"
-    //                         labelKey="label"
-    //                         valueKey="value"
-    //                         options={[
-    //                             {
-    //                                 label: 'Landing Page Views',
-    //                                 value: 'LANDING_PAGE_VIEWS',
-    //                             },
-    //                         ]}
-    //                         value={formData.optimizationGoal}
-    //                         onChange={handleChange}
-    //                     />
-    //                 </FormField>
-    //                 <Heading level={3}>Ad Creative Parameters</Heading>
-    //                 <FormField label="Ad Creative Name" name="adCreativeName">
-    //                     <TextInput
-    //                         name="adCreativeName"
-    //                         value={formData.adCreativeName}
-    //                         onChange={handleChange}
-    //                     />
-    //                 </FormField>
-    //                 <FormField label="Bodies (comma-separated)" name="bodies">
-    //                     <TextInput
-    //                         name="bodies"
-    //                         value={formData.bodies.join(',')}
-    //                         onChange={(e) =>
-    //                             handleChange({
-    //                                 ...e,
-    //                                 target: {
-    //                                     ...e.target,
-    //                                     value: e.target.value.split(','),
-    //                                 },
-    //                             })
-    //                         }
-    //                     />
-    //                 </FormField>
-    //                 <FormField label="Titles (comma-separated)" name="titles">
-    //                     <TextInput
-    //                         name="titles"
-    //                         value={formData.titles.join(',')}
-    //                         onChange={(e) =>
-    //                             handleChange({
-    //                                 ...e,
-    //                                 target: {
-    //                                     ...e.target,
-    //                                     value: e.target.value.split(','),
-    //                                 },
-    //                             })
-    //                         }
-    //                     />
-    //                 </FormField>
-    //                 <FormField
-    //                     label="Descriptions (comma-separated)"
-    //                     name="descriptions"
-    //                 >
-    //                     <TextArea
-    //                         name="descriptions"
-    //                         value={formData.descriptions.join(',')}
-    //                         onChange={(e) =>
-    //                             handleChange({
-    //                                 ...e,
-    //                                 target: {
-    //                                     ...e.target,
-    //                                     value: e.target.value.split(','),
-    //                                 },
-    //                             })
-    //                         }
-    //                     />
-    //                 </FormField>
-    //                 <FormField label="Website URL" name="websiteUrl">
-    //                     <TextInput
-    //                         type="url"
-    //                         name="websiteUrl"
-    //                         value={formData.websiteUrl}
-    //                         onChange={handleChange}
-    //                     />
-    //                 </FormField>
-    //                 <Button
-    //                     disabled={loading}
-    //                     busy={loading}
-    //                     label="Save Parameters"
-    //                     type="submit"
-    //                     primary
-    //                 />
-    //             </Form>
-    //         </CardTemplate>
-
-    //         <Button
-    //             primary
-    //             label="Process"
-    //             icon={<Sun />}
-    //             disabled={loading}
-    //             busy={loading}
-    //             onClick={handleProcess}
-    //             tip={{
-    //                 content: (
-    //                     <Box pad="small" round="small" background="light-3">
-    //                         Create Facebook Ads
-    //                     </Box>
-    //                 ),
-    //             }}
-    //         />
-    //         <button disabled={loading} onClick={handleTestDelete}>
-    //             clean up for testing
-    //         </button>
-    //         {/* <Button
-    //             label="auth dropbox"
-    //             busy={loading}
-    //             disabled={loading}
-    //             onClick={handleAuthDropbox}
-    //         /> */}
-    //         {/* <Grid columns="medium" gap="large" pad={{ bottom: 'large' }}>
-    //             <CardTemplate title="this is a card" />
-    //             <CardTemplate title="this is another card" />
-    //             <CardTemplate title="this is a third card" />
-    //         </Grid> */}
-    //     </Box>
-    // );
 };
 
 export default UserParameters;
