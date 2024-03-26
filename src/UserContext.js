@@ -1,15 +1,15 @@
 import { createContext, useState, useEffect } from 'react';
-import { db, useAuth, USER_INFO_COLLECTION_NAME } from './clientFirebase.js'; 
+import { db, useAuth, USER_INFO_COLLECTION_NAME } from './clientFirebase.js';
 import { doc, onSnapshot } from 'firebase/firestore';
 
 export const UserContext = createContext();
 
 export const UserContextProvider = ({ children }) => {
-    const currentUser = useAuth();
+    const { currentUser, currentUserLoading } = useAuth();
 
     const [userInfoFromFirestore, setUserInfoFromFirestore] = useState({});
     const [userInfoFromFirestoreLoading, setUserInfoFromFirestoreLoading] =
-        useState(false);
+        useState(true);
 
     useEffect(() => {
         if (currentUser) {
@@ -50,7 +50,8 @@ export const UserContextProvider = ({ children }) => {
             value={{
                 currentUser,
                 userInfoFromFirestore,
-                userInfoFromFirestoreLoading,
+                userInfoLoading:
+                    userInfoFromFirestoreLoading || currentUserLoading,
             }}
         >
             {children}

@@ -1,31 +1,8 @@
 import {
-    useAuth,
-    logout,
-    saveUserParameters,
     getUserParameters,
 } from '../clientFirebase.js';
-import { useContext, useEffect, useState } from 'react';
-import axios from 'axios';
-import {
-    Button,
-    Box,
-    Card,
-    CardHeader,
-    CardBody,
-    CardFooter,
-    Grid,
-    Heading,
-    Paragraph,
-    ResponsiveContext,
-    Form,
-    FormField,
-    Select,
-    TextInput,
-    Text,
-    TextArea,
-    Tabs,
-    Tab,
-} from 'grommet';
+import { useState } from 'react';
+import { Box, Tabs, Tab } from 'grommet';
 import FileStorageAuth from './FileStorageAuth.js';
 import CardTemplate from './CardTemplate.js';
 

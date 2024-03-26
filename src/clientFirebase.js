@@ -84,15 +84,17 @@ Functions
 */
 export function useAuth() {
     const [currentUser, setCurrentUser] = useState();
+    const [currentUserLoading, setCurrentUserLoading] = useState(true);
 
     useEffect(() => {
         const unsub = onAuthStateChanged(auth, (user) => {
             setCurrentUser(user);
+            setCurrentUserLoading(false);
         });
         return unsub;
     }, []);
 
-    return currentUser;
+    return { currentUser, currentUserLoading };
 }
 
 export function logout() {

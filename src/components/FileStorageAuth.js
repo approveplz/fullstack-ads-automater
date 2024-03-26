@@ -7,8 +7,9 @@ import { UserContext } from '../UserContext.js';
 
 const FileStorageAuth = () => {
     const [loading, setLoading] = useState(false);
-    const { currentUser, userInfoFromFirestore } = useContext(UserContext);
-    console.log({ userInfoFromFirestore });
+    const { currentUser, userInfoFromFirestore, userInfoLoading } =
+        useContext(UserContext);
+    // console.log({ userInfoFromFirestore });
 
     const handleAuthDropbox = async () => {
         setLoading(true);
@@ -21,9 +22,12 @@ const FileStorageAuth = () => {
     const dropboxRefreshToken =
         userInfoFromFirestore?.dropboxAuthInfo?.dropboxRefreshToken;
 
-    console.log({ dropboxRefreshToken });
+    // console.log({ dropboxRefreshToken });
+    console.log({ userInfoLoading });
 
-    return (
+    return userInfoLoading ? (
+        <div>loading...</div>
+    ) : (
         <Box direction="row" justify="between">
             <Text size="xlarge">Use Dropbox</Text>
             {!dropboxRefreshToken ? (

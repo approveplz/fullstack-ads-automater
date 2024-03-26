@@ -4,7 +4,9 @@ import { apiCallWithAuth } from '../clientHelpers.js';
 import { Box, Button, Text } from 'grommet';
 import { Sun } from 'grommet-icons';
 
-export const TestingDeleteButton = (currentUser) => {
+export const TestingDeleteButton = () => {
+    const { currentUser, userInfoFromFirestore } = useContext(UserContext);
+    console.log({ currentUser });
     const [loading, setLoading] = useState(false);
 
     const handleTestDelete = async () => {
