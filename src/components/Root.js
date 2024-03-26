@@ -61,7 +61,7 @@ const Root = () => {
         <Grommet theme={theme}>
             <Page>
                 <AppBar>
-                    <Text size="large">My App</Text>
+                    <Text size="large">Facebook Ad Automater</Text>
                     {currentUser ? (
                         <Button
                             label="Sign Out"
