@@ -1,6 +1,7 @@
 import axios from 'axios';
 import moment from 'moment';
-import fs from 'fs';
+// @ts-ignore
+import { promises as fs, createReadStream } from 'fs';
 import FormData from 'form-data';
 import {
     FacebookAdsApi,
@@ -9,7 +10,10 @@ import {
     AdSet,
     Ad,
 } from 'facebook-nodejs-business-sdk';
+import ffmpeg, { FfmpegCommand } from 'fluent-ffmpeg';
+
 import { logger } from 'firebase-functions/v1';
+import path from 'path';
 
 interface FbApiCreateCampaignParams {
     name: string;
@@ -94,6 +98,7 @@ export default class FacebookAdsProcessor {
     private pageId: string;
     private apiVersion: string;
     private adAccount: AdAccount;
+    private ffmpeg: FfmpegCommand;
 
     constructor(options: {
         appId: string;
@@ -124,6 +129,7 @@ export default class FacebookAdsProcessor {
         FacebookAdsApi.init(accessToken);
 
         this.adAccount = new AdAccount(`act_${this.accountId}`);
+        this.ffmpeg = ffmpeg();
 
         console.log('Initialized FacebookAdsProcessor');
     }
@@ -145,6 +151,69 @@ export default class FacebookAdsProcessor {
         console.log('Data:' + JSON.stringify(data, null, 2));
     }
 
+    async reduceVideoQualityIfNeeded(filePath: string) {
+        // console.log('reduce quality if needed called');
+        // console.log({ filePath });
+        const ffmpegProbePromise = new Promise((resolve, reject) => {
+            this.ffmpeg.input(filePath).ffprobe((error, data) => {
+                if (error) {
+                    console.log({ error });
+                    reject(error);
+                } else {
+                    console.log({ data });
+                    resolve(data);
+                }
+            });
+        });
+
+        const fileMetadata = (await ffmpegProbePromise) as {
+            format: { size: string };
+        };
+
+        console.log({ fileMetadata });
+
+        const {
+            format: { size: sizeBytes },
+        } = fileMetadata;
+
+        const maxMb = 100;
+        const maxBytes = 1024 * 1024 * maxMb;
+
+        let outputPath = filePath;
+
+        // Lower video bitrate and change output path
+        if (parseInt(sizeBytes) > maxBytes) {
+            console.log(`reducing bitrate for ${filePath}`);
+            const changeVideoBitRatePromise = new Promise((resolve, reject) => {
+                const fileDir = path.dirname(filePath);
+                const fileExt = path.extname(filePath);
+                const fileBase = path.basename(filePath, fileExt);
+
+                const outputPath = path.join(
+                    fileDir,
+                    `${fileBase}-reduced${fileExt}`
+                );
+
+                this.ffmpeg
+                    .input(filePath)
+                    // Found through trial and error
+                    .videoBitrate('20000k')
+                    .on('end', () => {
+                        console.log(`Reduced video saved at ${outputPath}`);
+                        resolve(outputPath);
+                    })
+                    .on('error', (error) => {
+                        reject(error);
+                    })
+                    .save(outputPath);
+            });
+
+            outputPath = (await changeVideoBitRatePromise) as string;
+            await fs.unlink(filePath);
+        }
+        return outputPath;
+    }
+
     async uploadAdVideo(params: {
         name: string;
         videoFilePath: string;
@@ -157,7 +226,7 @@ export default class FacebookAdsProcessor {
         const formdata = new FormData();
         formdata.append('name', name);
         formdata.append('access_token', this.accessToken);
-        formdata.append('source', fs.createReadStream(videoFilePath));
+        formdata.append('source', createReadStream(videoFilePath));
 
         const requestOptions = {
             method: 'post',
@@ -355,31 +424,42 @@ export default class FacebookAdsProcessor {
         titles,
         descriptions,
         website_url,
-    }: FbApiCreateAdCreativeParams): Promise<AdCreative> {
+    }: FbApiCreateAdCreativeParams): Promise<AdCreative | undefined> {
         console.log(`Creating Ad Creative. Name: ${name}`);
-        const assetFeedSpec = this.createAdCreativeAssetFeedSpec({
-            videos,
-            bodies,
-            titles,
-            descriptions,
-            website_url,
-        });
+        let adCreative;
+        try {
+            const assetFeedSpec = this.createAdCreativeAssetFeedSpec({
+                videos,
+                bodies,
+                titles,
+                descriptions,
+                website_url,
+            });
 
-        const objectStorySpec = this.createAdCreativeObjectStorySpec({
-            page_id: this.pageId,
-        });
+            console.log({ assetFeedSpec });
 
-        const adCreative = await this.adAccount.createAdCreative([], {
-            name,
-            object_story_spec: objectStorySpec,
-            asset_feed_spec: assetFeedSpec,
-        });
-        this.logApiCallResult(
-            `Created Ad Creative. Creative ID: ${adCreative.id}`,
-            adCreative
-        );
+            const objectStorySpec = this.createAdCreativeObjectStorySpec({
+                page_id: this.pageId,
+            });
 
-        return adCreative;
+            console.log({ objectStorySpec });
+
+            adCreative = await this.adAccount.createAdCreative([], {
+                name,
+                object_story_spec: objectStorySpec,
+                asset_feed_spec: assetFeedSpec,
+            });
+
+            this.logApiCallResult(
+                `Created Ad Creative. Creative ID: ${adCreative.id}`,
+                adCreative
+            );
+        } catch (e) {
+            console.log(e);
+            return;
+        } finally {
+            return adCreative;
+        }
     }
 
     async createAd(params: {

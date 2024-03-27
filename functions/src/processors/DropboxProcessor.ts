@@ -85,7 +85,7 @@ export default class DropboxProcessor {
             );
             return files;
         } catch (e) {
-            console.log(`Error getting files from Dropbox Folder ${path}`);
+            console.log(`Error getting files from Dropbox Folder ${path}`, e);
             return [];
         }
     }

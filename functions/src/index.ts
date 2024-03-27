@@ -123,7 +123,7 @@ app.get(
 export const api = onRequest(
     {
         timeoutSeconds: 540, //max is 540 seconds
-        memory: '1GiB',
+        memory: '4GiB',
     },
     app
 );

@@ -48,7 +48,36 @@ const createFacebookAdsFunctionBatch = async (
         tempLocalFolder
     );
 
-    const uploadVideoPromises = fileOutputPaths.map(
+    console.log({ fileOutputPaths });
+    debugger;
+
+    const updatedFileOutputPaths = []; // This will store the results
+
+    for (const fileOutputPath of fileOutputPaths) {
+        // Process each video one by one
+        const reducedQualityVideoPath =
+            await facebookAdsProcessor.reduceVideoQualityIfNeeded(
+                fileOutputPath
+            );
+        updatedFileOutputPaths.push(reducedQualityVideoPath); // Push the result into the array
+    }
+
+    /*
+    Processing them all at once was causing the function to run out of memory
+    */
+    // const updatedFileOutputPathsPromises = fileOutputPaths.map(
+    //     async (fileOutputPath) => {
+    //         // This also deletes the large file locally
+    //         return await facebookAdsProcessor.reduceVideoQualityIfNeeded(
+    //             fileOutputPath
+    //         );
+    //     }
+    // );
+    // const updatedFileOutputPaths = await Promise.all(
+    //     updatedFileOutputPathsPromises
+    // );
+
+    const uploadVideoPromises = updatedFileOutputPaths.map(
         async (outputPath: string) => {
             const video = await facebookAdsProcessor.uploadAdVideo({
                 name: path.basename(outputPath, path.extname(outputPath)),
@@ -66,8 +95,8 @@ const createFacebookAdsFunctionBatch = async (
     );
     const uploadedVideos = await Promise.all(uploadVideoPromises);
 
-    const deleteLocalFilePromises = fileOutputPaths.map((outputPath: string) =>
-        fs.unlink(outputPath)
+    const deleteLocalFilePromises = updatedFileOutputPaths.map(
+        (outputPath: string) => fs.unlink(outputPath)
     );
     await Promise.all(deleteLocalFilePromises);
     console.log(
@@ -83,6 +112,9 @@ const createFacebookAdsFunctionBatch = async (
         descriptions,
         website_url: websiteUrl,
     });
+    if (!adCreative) {
+        throw new Error('Invalid Ad Creative');
+    }
 
     const adSet = await facebookAdsProcessor.createAdSet({
         name: `${adSetName} - ${index + 1}`,
